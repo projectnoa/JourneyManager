@@ -1,0 +1,17 @@
+extends ../layout
+
+block head-content
+  link(rel="stylesheet" href="/css/tweets.css")
+  link(rel="script" href="/js/tweets.js")
+
+block layout-content
+  h1.mt-5.text-white.text-center Tweet pool
+  br
+
+  div.row
+    a.btn.btn-sm.text-white.ml-auto(href='/tweets/new')
+      i.fas.fa-plus
+  each item in items
+    div.row
+      div.card.w-100.p-3
+        div.card-text= item.description[0]

@@ -1,0 +1,15 @@
+extends ../layout
+
+block head-content
+  link(rel="stylesheet" href="/css/tweets.css")
+  link(rel="script" href="/js/tweets.js")
+
+block layout-content
+  h1.mt-5.text-white.text-center Tweet pool
+  br
+  
+  div.row
+    form(action="/tweets/create", method="post")
+        input(type="text", name="desc", placeholde="Enter a clever tweet of no more than 280 characters.")
+        br
+        input(type="submit", value="Save")
