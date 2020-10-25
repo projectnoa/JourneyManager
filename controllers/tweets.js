@@ -11,7 +11,7 @@ var parseString = require("xml2js").parseString;
  * Variables 
  */
 
-var s3 = new AWS.S3({ accessKeyId: process.env.AWS_S3_ID, secretAccessKey: process.env.AWS_S3_SECRET });
+var s3 = new AWS.S3({ accessKeyId: process.env.AWS_S3_ID, secretAccessKey: process.env.AWS_S3_SEC });
 
 /**
  *  Methods
