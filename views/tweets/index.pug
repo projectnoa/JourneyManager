@@ -5,13 +5,18 @@ block head-content
   link(rel="script" href="/js/tweets.js")
 
 block layout-content
-  h1.mt-5.text-white.text-center Tweet pool
+  h1.mt-5.text-white.text-center Tweets
   br
 
   div.row
     a.btn.btn-sm.text-white.ml-auto(href='/tweets/new')
-      i.fas.fa-plus
+      i.fas.fa-plus.fa-2x
   each item in items
     div.row
       div.card.w-100.p-3
-        div.card-text= item.description[0]
+        div.card-text
+          div.row.no-gutters
+            div.col !{item.description}
+          div.row.no-gutters
+            div.col.text-right
+              small.text-muted #{item.date}

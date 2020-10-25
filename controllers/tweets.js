@@ -7,6 +7,8 @@
 const AWS = require('aws-sdk');
 var parseString = require("xml2js").parseString;
 
+var Tweet = require('./../models/tweet');
+
 /**
  * Variables 
  */
@@ -29,8 +31,10 @@ exports.tweetsIndex = (req, res, next) => {
       var dataString = data.Body.toString('utf-8');
       parseString(dataString, function(err, result) {
         if (err) console.log(err);
+
+        let tweets = result.rss.channel[0].item.map(item => new Tweet(item.id[0], item.description[0], item.date[0]));
   
-        res.render('./../views/tweets/index', { title: 'Tweets', authorized: true, items: result.rss.channel[0].item });
+        res.render('./../views/tweets/index', { title: 'Tweets', authorized: true, items: tweets });
       });
     });
 };

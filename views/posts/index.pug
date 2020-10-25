@@ -5,12 +5,12 @@ block head-content
   link(rel="script" href="/js/posts.js")
 
 block layout-content
-  h1.mt-5.text-white.text-center Post index
+  h1.mt-5.text-white.text-center Posts
   br
 
   each item in items
     div.row
       div.card.w-100.p-3
         div.card-title
-          b= item.title.rendered
-        div.card-text= item.content.rendered.replace(/<[^>]*>?/gm, '').replace(/[^a-zA-Z ]/g, '').slice(0, 300) + '...'
+          b= item.title
+        div.card-text= item.content
