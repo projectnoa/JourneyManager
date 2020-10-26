@@ -1,3 +1,53 @@
-mark {
+/* Data */
+em.hashtag {
     font-weight: bolder;
+}
+
+em.url {
+    color: blue;
+}
+
+/* highlight excess text */
+.tweet-composer {
+    position: relative;
+    z-index: 1;
+}
+
+.js-keeper-editor {
+    border: 1px solid #dadada;  
+}
+  
+.js-keeper-editor,
+.js-keeper-placeholder-back {
+    background: transparent;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 14px; /* Same font for both. */
+    margin: auto;
+    min-height: 200px;
+    outline: none;
+    padding: 10px;
+    resize: vertical;
+    width: 100%;
+}
+.js-keeper-placeholder-back {
+    bottom: 0;
+    color: transparent;
+    left: 0;
+    position: absolute;
+    top: 0;
+    white-space: pre-wrap;
+    width: 100%;
+    word-wrap: break-word;
+    z-index: -1;
+}
+.js-keeper-placeholder-back em.excess {
+    background: orange !important;
+}
+.js-keeper-placeholder-back em.hashtag {
+    background: lightblue !important;
+    font-weight: normal;
+}
+.js-keeper-placeholder-back em.url {
+    background: lightgreen !important;
+    color: black;
 }

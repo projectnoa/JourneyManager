@@ -2,7 +2,7 @@ extends ../layout
 
 block head-content
   link(rel="stylesheet" href="/css/tweets.css")
-  link(rel="script" href="/js/tweets.js")
+  script(src="/js/tweets.js")
 
 block layout-content
   h1.mt-5.text-white.text-center Tweets
@@ -18,5 +18,8 @@ block layout-content
           div.row.no-gutters
             div.col !{item.description}
           div.row.no-gutters
+            div.col-auto
+              form(action="/tweets/" + item.id + "/delete", method="post")
+                input.btn.btn-sm.btn-danger(type="submit", value="delete")
             div.col.text-right
               small.text-muted #{item.date}

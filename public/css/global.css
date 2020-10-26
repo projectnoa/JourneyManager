@@ -4,13 +4,12 @@ html {
 
 body {
     height: 100%;
-    background: linear-gradient(#529ACA,#27658E) no-repeat;
 }
 
-body > .container {
-    display: block;
-    max-height: 85%;
-    overflow-y: scroll;
+.background {
+    width: 100%;
+    min-height: 100%;
+    background: linear-gradient(#529ACA,#27658E) no-repeat;
 }
 
 .top-spacer {

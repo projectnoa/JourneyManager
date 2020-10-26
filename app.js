@@ -64,7 +64,8 @@ router.get('/auth/wordpress/callback',
   function(req, res) {
     var account = req.account;
 
-    res.redirect('/dashboard');
+    res.redirect(req.session.returnTo || '/dashboard');
+    delete req.session.returnTo;
 });
 
 module.exports = app;
