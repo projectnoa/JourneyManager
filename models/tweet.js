@@ -1,10 +1,10 @@
 
 var dateFormat = require('dateformat');
 
-function Tweet(id, description, date) {
-    this.id = id || null;
-    this.description = parseTweet(description);
-    this.date = dateFormat(new Date(date), "dddd, mmmm dS, yyyy");
+function Tweet(item) {
+    this.id = item.id[0] || null;
+    this.description = parseTweet(item.description[0]);
+    this.date = dateFormat(new Date(item.date[0]), "dddd, mmmm dS, yyyy");
 };
 
 var parseTweet = (text) => {

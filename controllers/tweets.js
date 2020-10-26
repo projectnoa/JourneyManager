@@ -5,7 +5,8 @@
  */
 
 const AWS = require('aws-sdk');
-const { text } = require('express');
+
+var fetch = require('node-fetch');
 var parseString = require("xml2js").parseString;
 var xml2js = require("xml2js");
 
@@ -17,6 +18,8 @@ var Tweet = require('./../models/tweet');
  * Variables 
  */
 
+const feedURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/tweetbotFeed.xml';
+
 var s3 = new AWS.S3({ 
   accessKeyId: process.env.AWS_S3_ID, 
   secretAccessKey: process.env.AWS_S3_SEC 
@@ -27,7 +30,7 @@ var s3 = new AWS.S3({
  */
 
 exports.tweetsIndex = (req, res, next) => {
-    getTweets((result) => {
+    getTweets(result => {
       res.render('./../views/tweets/index', { title: 'Tweets', authorized: true, items: parseTweets(result) });
     });
 };
@@ -71,20 +74,48 @@ exports.tweetsDestroy = (req, res, next) => {
 };
 
 var getTweets = (callback) => {
-  var params = {
-    Bucket: process.env.AWS_S3_BUCKET, 
-    Key: "tweetbotFeed.xml"
-   };
-  
-  s3.getObject(params, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
+  var req = fetch(feedURL, { 
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36', 
+    'accept': 'text/html,application/xhtml+xml' 
+  }).then(response => response.text())
+  .then(data => {
+      parseString(data, function(err, result) {
+          if (err) console.log(err);
     
-    var dataString = data.Body.toString('utf-8');
-    parseString(dataString, function(err, result) {
-      if (err) console.log(err);
+          callback(result);
+      });
+  });
+}
 
-      callback(result);
-    });
+var parseTweets = (result) => {
+  return result.rss.channel[0].item.map(item => new Tweet(item));
+}
+
+var addTweet = (tweet, callback) => {
+  // Get live tweets data
+  getTweets(result => {
+    // Append tweet
+    result.rss.channel[0].item.push(tweet);
+    // Convert to XML
+    var builder = new xml2js.Builder();
+    var data = builder.buildObject(result);
+    // Submit to S3
+    submitTweets(data, callback);
+  });
+}
+
+var removeTweet = (id, callback) => {
+  // Get live tweets data
+  getTweets(result => {
+    // Take items
+    let items = result.rss.channel[0].item;
+    // Remove tweet
+    result.rss.channel[0].item = items.filter(item => item.id[0] !== id);
+    // Convert to XML
+    var builder = new xml2js.Builder();
+    var data = builder.buildObject(result);
+    // Submit to S3
+    submitTweets(data, callback);
   });
 }
 
@@ -104,37 +135,5 @@ var submitTweets = (data, callback) => {
       // Succeeded
       callback(true);
     }
-  });
-}
-
-var parseTweets = (result) => {
-  return result.rss.channel[0].item.map(item => new Tweet(item.id[0], item.description[0], item.date[0]));
-}
-
-var addTweet = (tweet, callback) => {
-  // Get live tweets data
-  getTweets((result) => {
-    // Append tweet
-    result.rss.channel[0].item.push(tweet);
-    // Convert to XML
-    var builder = new xml2js.Builder();
-    var data = builder.buildObject(result);
-    // Submit to S3
-    submitTweets(data, callback);
-  });
-}
-
-var removeTweet = (id, callback) => {
-  // Get live tweets data
-  getTweets((result) => {
-    // Take items
-    let items = result.rss.channel[0].item;
-    // Remove tweet
-    result.rss.channel[0].item = items.filter(item => item.id[0] !== id);
-    // Convert to XML
-    var builder = new xml2js.Builder();
-    var data = builder.buildObject(result);
-    // Submit to S3
-    submitTweets(data, callback);
   });
 }

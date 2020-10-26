@@ -1,5 +1,9 @@
 
-// New Tweet Setup function
+
+function tweetsSetup() {
+    
+}
+
 function newTweetSetup() {
     // Get element
     var element = document.querySelector('textarea[data-behavior~="tweet-parse"]');

@@ -19,7 +19,7 @@ block layout-content
           form(action="/tweets/create", method="post")
             div.form-group.tweet-composer
               label(for='text')
-              textarea.js-keeper-editor(name="text", data-behavior='tweet-parse')
+              textarea.form-control.js-keeper-editor(name="text", data-behavior='tweet-parse', placeholder="I pooped today! #blessed")
               div.js-keeper-placeholder-back
               small.float-left.form-text.text-muted Enter a clever tweet no more than 280 characters long.
               span.float-right(data-behavior='tweet-length')

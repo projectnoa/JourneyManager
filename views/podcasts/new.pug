@@ -1,0 +1,45 @@
+extends ../layout
+
+block head-content
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js", integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==", crossorigin="anonymous")
+
+  link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/css/tempusdominus-bootstrap-4.min.css", integrity="sha512-PMjWzHVtwxdq7m7GIxBot5vdxUY+5aKP9wpKtvnNBZrVv1srI8tU6xvFMzG8crLNcMj/8Xl/WWmo/oAP/40p1g==", crossorigin="anonymous")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/js/tempusdominus-bootstrap-4.min.js", integrity="sha512-2JBCbWoMJPH+Uj7Wq5OLub8E5edWHlTM4ar/YJkZh3plwB2INhhOC3eDoqHm1Za/ZOSksrLlURLoyXVdfQXqwg==", crossorigin="anonymous")
+
+  link(rel="stylesheet" href="/css/podcasts.css")
+  script(src="/js/podcasts.js")
+  
+  meta(name="page-id", content="newPodcast")
+
+block layout-content
+  h1.mt-5.text-white.text-center Create a podcast episode
+  br
+  
+  div.row
+    div.col-xl-6.offset-xl-3.col-lg-8.offset-lg-2.col-10.offset-1
+      div.card.p-3
+        div.card-text
+          form(action="/podcasts/create", method="post")
+            div.form-group
+                label(for='title') Title
+                input.form-control(type="text", name="title", placeholder="Enter an episode title")
+            div.form-group
+                label(for='description') Description
+                textarea.form-control(name="description", placeholder="Enter the episode description")
+            div.form-group
+                label(for='keywords') Keywords
+                input.form-control(type="text", name="keywords", placeholder="Enter some keywords separated by comma")
+                small.form-text.text-muted Example: Mental health, Habits, Success.
+            div.form-group
+                label(for='pubDate') Publication date
+                div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
+                    input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker')
+                    div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
+                        span.input-group-text
+                            i.fas.fa-calendar-alt
+            div.form-check
+                input.form-check-input(type="checkbox", name="explicit")
+                label.form-check-label(for='explicit') Is explicit?
+            br
+            center
+              input.btn.btn-md.btn-primary.px-4(type="submit", value="Save")
