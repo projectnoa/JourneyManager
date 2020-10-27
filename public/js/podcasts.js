@@ -4,6 +4,7 @@ function podcastsSetup() {
 }
 
 function newPodcastSetup() {
+    // Set datepicker 
     let element = document.querySelector('[data-behavior~="datetime-picker"]');
     
     $(element).datetimepicker({
@@ -29,26 +30,28 @@ function newPodcastSetup() {
             close: 'fas fa-times'
         },
         showClose: true
-      });
+    });
+    // Set fileupload 
+    element = document.querySelector('[data-behavior~="file-upload"]');
 
-      element = document.querySelector('[data-behavior~="file-upload"]');
+    element.addEventListener('change', (event) => {
+      let target = event.target;
 
-      element.addEventListener('change', (event) => {
-        let target = event.target;
+      if (target.files && target.files[0]) {
+          let reader = new FileReader();
+          
+          reader.onload = (e) => {
+            let fileData = e.target.result;
+            let fileName = target.files[0].name;
 
-        if (target.files && target.files[0]) {
-            let reader = new FileReader();
-            
-            reader.onload = (e) => {
-              let fileData = e.target.result;
-              let fileName = target.files[0].name;
-
-              target.setAttribute("data-title", fileName);
-            }
-
-            reader.readAsDataURL(target.files[0]);
+            target.setAttribute("data-title", fileName);
           }
-      });
+
+          reader.readAsDataURL(target.files[0]);
+        }
+    });
+    // Set form validation
+    setPodcastFormValidationBehavior();
 }
 
 function showPodcastSetup() {

@@ -1,0 +1,12 @@
+
+.popover.validation {
+    border-color: red;
+}
+
+.popover.validation .popover-header {
+    color: red;
+}
+
+.popover.validation .popover-body {
+    color: red;
+}
