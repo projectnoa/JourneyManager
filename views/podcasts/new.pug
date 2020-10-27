@@ -45,7 +45,7 @@ block layout-content
                     div.col-lg-6
                         label(for='pubDate') Publication date
                         div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
-                            input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker')
+                            input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
                             div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
                                 span.input-group-text
                                     i.fas.fa-calendar-alt

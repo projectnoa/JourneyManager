@@ -10,7 +10,6 @@ function newPodcastSetup() {
     $(element).datetimepicker({
         locale: 'en',
         format: 'ddd, D MMM YYYY HH:mm:ss',
-        stepping: 15,
         minDate: new Date(),
         defaultDate: new Date(),
         sideBySide: true,
@@ -31,7 +30,7 @@ function newPodcastSetup() {
         },
         showClose: true
     });
-    // Set fileupload 
+    // Set File upload 
     element = document.querySelector('[data-behavior~="file-upload"]');
 
     element.addEventListener('change', (event) => {
