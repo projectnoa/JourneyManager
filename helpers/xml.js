@@ -16,3 +16,12 @@ exports.jsonToXML = (json) => {
     var builder = new xml2js.Builder();
     return builder.buildObject(json);
 }
+
+exports.parseData = (data, callback) => {
+    // Parse data
+    parseString(data, function(err, result) {
+        if (err) console.log(err);
+        // Return result   
+        callback(result);
+    });
+}

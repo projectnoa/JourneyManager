@@ -6,7 +6,7 @@
 
 var Post = require('./../models/post');
 
-const wordpress = require('./../helpers/wordpress');
+const wp = require('./../helpers/wordpress');
 
 /**
  *  Methods

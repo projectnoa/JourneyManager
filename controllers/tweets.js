@@ -76,13 +76,10 @@ var getTweets = (callback) => {
   var req = fetch(feedURL, { 
     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36', 
     'accept': 'text/html,application/xhtml+xml' 
-  }).then(response => response.text())
+  })
+  .then(response => response.text())
   .then(data => {
-      parseString(data, function(err, result) {
-          if (err) console.log(err);
-          // Return data 
-          callback(result);
-      });
+    xml.parseData(data, callback);
   });
 }
 

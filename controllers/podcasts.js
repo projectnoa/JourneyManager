@@ -63,7 +63,7 @@ exports.podcastsNew = (req, res, next) => {
 
 exports.podcastsCreate = (req, res, next) => {
     // Instantiate upload form process object
-    let formProcessor = multer({ storage: storage, fileFilter: helpers.imageFilter }).single('file');
+    let formProcessor = multer({ storage: storage, fileFilter: helpers.fileFilter }).single('file');
     // Initiate upload form process
     formProcessor(req, res, function(err) {
         // Validate file upload
@@ -155,11 +155,7 @@ var getPodcast = (callback) => {
         'accept': 'text/html,application/xhtml+xml' 
     }).then(response => response.text())
     .then(data => {
-        parseString(data, function(err, result) {
-            if (err) console.log(err);
-      
-            callback(result);
-          });
+        xml.parseData(data, callback);
     });
 }
 

@@ -36,9 +36,6 @@ block layout-content
                 input.form-control(type="text", name="keywords", placeholder="Enter some keywords separated by comma", required=true)
                 small.form-text.text-muted Example: Mental health, Habits, Success.
             div.form-group
-                label.sr-only(for='file') Podcast file
-                input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload', required=true)
-            div.form-group
                 div.row
                     div.col-lg-6
                         label(for='season') Season
@@ -48,13 +45,16 @@ block layout-content
                     div.col-lg-6
                         label(for='pubDate') Publication date
                         div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
-                            input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
+                            input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker')
                             div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
                                 span.input-group-text
                                     i.fas.fa-calendar-alt
             div.form-check
                 input.form-check-input(type="checkbox", name="explicit")
                 label.form-check-label(for='explicit') Is explicit?
+            div.form-group
+                label.sr-only(for='file') Podcast file
+                input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload', required=true)
             br
             center
               input.btn.btn-md.btn-primary.px-4(type="submit", value="Publish")
