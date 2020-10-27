@@ -6,6 +6,9 @@ block head-content
   link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/css/tempusdominus-bootstrap-4.min.css", integrity="sha512-PMjWzHVtwxdq7m7GIxBot5vdxUY+5aKP9wpKtvnNBZrVv1srI8tU6xvFMzG8crLNcMj/8Xl/WWmo/oAP/40p1g==", crossorigin="anonymous")
   script(src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/js/tempusdominus-bootstrap-4.min.js", integrity="sha512-2JBCbWoMJPH+Uj7Wq5OLub8E5edWHlTM4ar/YJkZh3plwB2INhhOC3eDoqHm1Za/ZOSksrLlURLoyXVdfQXqwg==", crossorigin="anonymous")
 
+  //-script(src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.js", integrity="sha512-9WciDs0XP20sojTJ9E7mChDXy6pcO0qHpwbEJID1YVavz2H6QBz5eLoDD8lseZOb2yGT8xDNIV7HIe1ZbuiDWg==", crossorigin="anonymous")
+  //-link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/basic.min.css", integrity="sha512-MeagJSJBgWB9n+Sggsr/vKMRFJWs+OUphiDV7TJiYu+TNQD9RtVJaPDYP8hA/PAjwRnkdvU+NsTncYTKlltgiw==", crossorigin="anonymous")
+
   link(rel="stylesheet" href="/css/podcasts.css")
   script(src="/js/podcasts.js")
   
@@ -19,7 +22,7 @@ block layout-content
     div.col-xl-6.offset-xl-3.col-lg-8.offset-lg-2.col-10.offset-1
       div.card.p-3
         div.card-text
-          form(action="/podcasts/create", method="post")
+          form(action="/podcasts/create", method="post", enctype="multipart/form-data")
             div.form-group
                 label(for='title') Title
                 input.form-control(type="text", name="title", placeholder="Enter an episode title")
@@ -31,15 +34,25 @@ block layout-content
                 input.form-control(type="text", name="keywords", placeholder="Enter some keywords separated by comma")
                 small.form-text.text-muted Example: Mental health, Habits, Success.
             div.form-group
-                label(for='pubDate') Publication date
-                div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
-                    input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker')
-                    div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
-                        span.input-group-text
-                            i.fas.fa-calendar-alt
+                label.sr-only(for='file') Podcast file
+                input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload')
+            div.form-group
+                div.row
+                    div.col-lg-6
+                        label(for='season') Season
+                        select.form-control(name='season')
+                            option(value="2020", selected=true) 2020
+                            option(value="2021") 2021
+                    div.col-lg-6
+                        label(for='pubDate') Publication date
+                        div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
+                            input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
+                            div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
+                                span.input-group-text
+                                    i.fas.fa-calendar-alt
             div.form-check
                 input.form-check-input(type="checkbox", name="explicit")
                 label.form-check-label(for='explicit') Is explicit?
             br
             center
-              input.btn.btn-md.btn-primary.px-4(type="submit", value="Save")
+              input.btn.btn-md.btn-primary.px-4(type="submit", value="Publish")

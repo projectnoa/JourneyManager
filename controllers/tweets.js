@@ -4,26 +4,21 @@
  * Required External Modules
  */
 
-const AWS = require('aws-sdk');
-
 var fetch = require('node-fetch');
-var parseString = require("xml2js").parseString;
-var xml2js = require("xml2js");
 
 var dateFormat = require('dateformat');
 
 var Tweet = require('./../models/tweet');
+
+const s3 = require('./../helpers/s3');
+const xml = require('./../helpers/xml');
 
 /**
  * Variables 
  */
 
 const feedURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/tweetbotFeed.xml';
-
-var s3 = new AWS.S3({ 
-  accessKeyId: process.env.AWS_S3_ID, 
-  secretAccessKey: process.env.AWS_S3_SEC 
-});
+const resourceKey = 'tweetbotFeed.xml';
 
 /**
  *  Methods
@@ -41,7 +36,11 @@ exports.tweetsNew = (req, res, next) => {
 
 exports.tweetsCreate = (req, res, next) => {
   let date = new Date();
-  tweet = { id: [dateFormat(date, "yyyymmddhhmmss")], date: [dateFormat(date, "yyyy-mm-dd")], description: [req.body.text] };
+  tweet = { 
+    id: [dateFormat(date, "yyyymmddhhmmss")], 
+    date: [dateFormat(date, "yyyy-mm-dd")], 
+    description: [req.body.text] 
+  };
   
   addTweet(tweet, (succeeded) => {
     if (succeeded) {
@@ -81,7 +80,7 @@ var getTweets = (callback) => {
   .then(data => {
       parseString(data, function(err, result) {
           if (err) console.log(err);
-    
+          // Return data 
           callback(result);
       });
   });
@@ -92,48 +91,30 @@ var parseTweets = (result) => {
 }
 
 var addTweet = (tweet, callback) => {
-  // Get live tweets data
+  // Get live data
   getTweets(result => {
-    // Append tweet
+    // Append item
     result.rss.channel[0].item.push(tweet);
-    // Convert to XML
-    var builder = new xml2js.Builder();
-    var data = builder.buildObject(result);
     // Submit to S3
-    submitTweets(data, callback);
+    s3.submitS3File({
+      Bucket: process.env.AWS_S3_RSS_BUCKET, 
+      Key: resourceKey,
+      Body: xml.jsonToXML(result)
+    }, callback);
   });
 }
 
 var removeTweet = (id, callback) => {
   // Get live tweets data
   getTweets(result => {
-    // Take items
-    let items = result.rss.channel[0].item;
     // Remove tweet
+    let items = result.rss.channel[0].item;
     result.rss.channel[0].item = items.filter(item => item.id[0] !== id);
-    // Convert to XML
-    var builder = new xml2js.Builder();
-    var data = builder.buildObject(result);
     // Submit to S3
-    submitTweets(data, callback);
-  });
-}
-
-var submitTweets = (data, callback) => {
-  var params = {
-    Bucket: process.env.AWS_S3_BUCKET, 
-    Key: "tweetbotFeed.xml",
-    Body: data
-   };
-  
-  s3.upload(params, function(err, data) {
-    if (err) { 
-      console.log(err, err.stack);
-      // Failed
-      callback(false);
-    } else {
-      // Succeeded
-      callback(true);
-    }
+    s3.submitS3File({
+      Bucket: process.env.AWS_S3_RSS_BUCKET, 
+      Key: resourceKey,
+      Body: xml.jsonToXML(result)
+    }, callback);
   });
 }
