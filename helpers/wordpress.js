@@ -21,32 +21,22 @@ wp.podcasts = wp.registerRoute( 'wp/v2', 'podcast/(?P<id>)', {
  *  Methods
  */
 
-exports.getPosts = (token, callback) => {
+exports.getPosts = (token) => {
     // Get all posts
-    wp.posts()
+    return wp.posts()
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .get()
-    .then(function( data ) {
-        callback(data);
-    })
-    .catch(function( err ) {
-        console.log(err);
-        // handle error
-        callback(null);
-    });
 }
 
-exports.publishPodcast = (item, token, callback) => {
+exports.publishPodcast = (item, token) => {
     // Publish podcast episode
-    wp.podcasts()
+    return wp.podcasts()
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .create(item)
-    .then(function( response ) {
-        callback(response);
-    })
-    .catch(function( err ) {
-        console.log(err);
-        // handle error
-        callback(null);
-    });
+}
+
+exports.publishTags = (item, token) => {
+    return wp.tags()
+    setHeaders( 'Authorization', 'Bearer ' + token )
+    .create(item)
 }

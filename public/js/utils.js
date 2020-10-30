@@ -86,6 +86,19 @@ function displayConfirm(text, callback) {
     });
 }
 
+function displayLoading(show) {
+    // Get loading screen
+    let screen = document.querySelector('div[data-behavior="loading-screen"]');
+
+    if (show) {
+        // Display loading screen
+        screen.classList.remove('d-none');
+    } else {
+        // Display loading screen
+        screen.classList.add('d-none');
+    }
+}
+
 function isAssigned(value) {
     return (value !== undefined && value !== null && value.length > 0);
 }

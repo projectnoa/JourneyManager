@@ -14,7 +14,8 @@ const wp = require('./../helpers/wordpress');
 
 exports.postsIndex = (req, res, next) => {
   // Get posts
-  wp.getPosts(req.session.accessToken, (data) => {
+  wp.getPosts(req.session.accessToken)
+  .then((data) => {
     if (data !== null) {
       let posts = data.map(item => new Post(0, item.title.rendered, item.content.rendered));
 

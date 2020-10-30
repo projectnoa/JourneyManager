@@ -25,8 +25,15 @@ const resourceKey = 'tweetbotFeed.xml';
  */
 
 exports.tweetsIndex = (req, res, next) => {
-    getTweets(result => {
-      res.render('./../views/tweets/index', { title: 'Tweets', authorized: true, items: parseTweets(result) });
+    getTweets()
+    .then(data => {
+      res.render('./../views/tweets/index', { title: 'Tweets', authorized: true, items: parseTweets(data) });
+    })
+    .catch((err) => {
+      // Log error message
+      console.log(err);
+      // Return error 
+      res.send({ message: err });
     });
 };
 
@@ -42,12 +49,19 @@ exports.tweetsCreate = (req, res, next) => {
     description: [req.body.text] 
   };
   
-  addTweet(tweet, (succeeded) => {
+  addTweet(tweet)
+  .then(succeeded => {
     if (succeeded) {
       res.redirect('/tweets');
     } else {
       res.redirect('back', { title: 'New Tweet', authorized: true, notice: 'There was an error.' });
     }
+  })
+  .catch((err) => {
+    // Log error message
+    console.log(err);
+    // Return error 
+    res.send({ message: err });
   });
 };
 
@@ -63,55 +77,62 @@ exports.tweetsDestroy = (req, res, next) => {
   // Get removed tweet id
   var id = req.params.id;
   // Remove tweet
-  removeTweet(id, (succeeded) => {
+  removeTweet(id)
+  .then(succeeded => {
     if (succeeded) {
       res.redirect('/tweets');
     } else {
       res.redirect('back', { title: 'New Tweet', authorized: true, notice: 'There was an error.' });
     }
+  })
+  .catch((err) => {
+    // Log error message
+    console.log(err);
+    // Return error 
+    res.send({ message: err });
   });
 };
 
-var getTweets = (callback) => {
-  var req = fetch(feedURL, { 
+var getTweets = () => {
+  return fetch(feedURL, { 
     'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36', 
     'accept': 'text/html,application/xhtml+xml' 
   })
   .then(response => response.text())
-  .then(data => {
-    xml.parseData(data, callback);
-  });
+  .then(xml.parseData);
 }
 
 var parseTweets = (result) => {
   return result.rss.channel[0].item.map(item => new Tweet(item));
 }
 
-var addTweet = (tweet, callback) => {
+var addTweet = (tweet) => {
   // Get live data
-  getTweets(result => {
+  return getTweets()
+  .then(result => {
     // Append item
     result.rss.channel[0].item.push(tweet);
     // Submit to S3
-    s3.submitS3File({
+    return s3.submitS3File({
       Bucket: process.env.AWS_S3_RSS_BUCKET, 
       Key: resourceKey,
       Body: xml.jsonToXML(result)
-    }, callback);
+    });
   });
 }
 
-var removeTweet = (id, callback) => {
+var removeTweet = (id) => {
   // Get live tweets data
-  getTweets(result => {
+  return getTweets()
+  .then(result => {
     // Remove tweet
     let items = result.rss.channel[0].item;
     result.rss.channel[0].item = items.filter(item => item.id[0] !== id);
     // Submit to S3
-    s3.submitS3File({
+    return s3.submitS3File({
       Bucket: process.env.AWS_S3_RSS_BUCKET, 
       Key: resourceKey,
       Body: xml.jsonToXML(result)
-    }, callback);
+    });
   });
 }

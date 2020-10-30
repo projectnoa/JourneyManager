@@ -9,7 +9,7 @@ function newPodcastSetup() {
     
     $(element).datetimepicker({
         locale: 'en',
-        format: 'ddd, D MMM YYYY HH:mm:ss',
+        format: 'M/D/YYYY hh:mm a',
         minDate: new Date(),
         defaultDate: new Date(),
         sideBySide: true,
@@ -51,6 +51,46 @@ function newPodcastSetup() {
     });
     // Set form validation
     setPodcastFormValidationBehavior();
+    // Set form submition
+    document.querySelector('form')
+    .addEventListener('submit', event => {
+      // Store reference to form to make later code easier to read
+      const target = event.target;
+
+      var isValid = $(target).valid();
+
+      if (isValid) {
+        // Post data using the Fetch API
+        fetch(target.action, {
+          method: target.method,
+          body: new FormData(target)
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data);
+          // Hide loading screen 
+          displayLoading(false);
+          if (isDefined(data.message)) {
+            // Display error
+            displayNotice(data.message);
+          } else if (isDefined(data.redirectTo)) {
+            // Redirect on success
+            window.location.href = data.redirectTo;
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          // Hide loading screen 
+          displayLoading(false);
+          // Display error
+          displayNotice(err);
+        });
+        // Prevent the default form submit
+        event.preventDefault();
+        // Display loading screen
+        displayLoading(true);
+      }
+    });
 }
 
 function showPodcastSetup() {

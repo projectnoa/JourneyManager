@@ -21,17 +21,8 @@ var s3 = new AWS.S3({
  *  Methods
  */
 
-exports.submitS3File = (params, callback) => {
-    s3.upload(params, function(err, data) {
-      if (err) { 
-        console.log(err, err.stack);
-        // Failed
-        callback(false);
-      } else {
-        // Succeeded
-        callback(true);
-      }
-    });
+exports.submitS3File = (params) => {
+    return s3.upload(params).promise();
 }
 
 exports.createS3File = (data, key, bucket) => {
@@ -42,14 +33,6 @@ exports.createS3File = (data, key, bucket) => {
     };
 }
 
-exports.backupFile = (params, callback) => {
-    s3.copyObject(params, function(err, data) {
-        if (err) {
-            console.log(err, err.stack);
-
-            callback(false);
-        } else {
-            callback(true);
-        }
-    });
+exports.backupFile = (params) => {
+    return s3.copyObject(params).promise();
 }

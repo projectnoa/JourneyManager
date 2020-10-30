@@ -17,11 +17,17 @@ exports.jsonToXML = (json) => {
     return builder.buildObject(json);
 }
 
-exports.parseData = (data, callback) => {
-    // Parse data
-    parseString(data, function(err, result) {
-        if (err) console.log(err);
-        // Return result   
-        callback(result);
+exports.parseData = (data) => {
+    return new Promise(function(resolve, reject) {
+        // Parse data
+        parseString(data, function(err, result) {
+            if (err) {
+                // Return error
+                reject(err);
+            } else {
+                // Return result
+                resolve(result);
+            }
+        });
     });
 }
