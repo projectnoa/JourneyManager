@@ -30,6 +30,7 @@ passport.use(new passportStrategy({
     // store tokens in session
     req.session.accessToken = accessToken; 
     req.session.refreshToken = refreshToken;
+    req.session.profile = profile;
     // Continue to router 
     return done(null, profile);
   }

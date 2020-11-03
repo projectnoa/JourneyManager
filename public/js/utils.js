@@ -14,7 +14,7 @@ function checkForNotice() {
     // Get element
     let notice = document.querySelector('meta[name="notice"]');
     // Check if any notice is set
-    if (isAssigned(notice.content)) {
+    if (isDefined(notice.content)) {
         // Display notice
         displayNotice(notice.content);
     }
@@ -99,6 +99,6 @@ function displayLoading(show) {
     }
 }
 
-function isAssigned(value) {
+function isDefined(value) {
     return (value !== undefined && value !== null && value.length > 0);
 }

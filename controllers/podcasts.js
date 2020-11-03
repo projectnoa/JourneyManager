@@ -4,12 +4,7 @@
  * Required External Modules
  */
 
-var fetch = require('node-fetch');
-
 const util = require('util');
-
-const multer = require('multer');
-const path = require('path');
 
 var fs = require('fs');
 
@@ -20,9 +15,11 @@ var moment = require('moment');
 var Podcast = require('./../models/podcast');
 
 const helpers = require('./../helpers/helper');
+const fetcher = require('./../helpers/fetcher');
 const s3 = require('./../helpers/s3');
 const xml = require('./../helpers/xml');
 const wp = require('./../helpers/wordpress');
+const upload = require('./../helpers/audioUpload');
 
 /**
  * Variables
@@ -38,90 +35,51 @@ const podcastImageURL = podcastURL + 'images/DTMG-profile-v3.jpeg';
  *  Methods
  */
 
-exports.podcastsIndex = (req, res, next) => {
-    getPodcast()
-    .then(result => {
-        res.render('./podcasts/index', { title: 'Podcasts', authorized: true, items: parsePodcast(result) }); 
-    })
-    .catch((err) => {
+exports.podcastsIndex = async (req, res, next) => {
+    try {
+        let result = await fetcher(feedURL);
+
+        res.render('./podcasts/index', { title: 'Podcasts', authorized: true, items: parsePodcast(result) });
+    } catch (err) {
         // Log error message
         console.log(err);
         // Return error 
-        res.send({ message: err });
-    });;
-};
-
-exports.podcastsShow = (req, res, next) => {
-    res.render('./../views/podcasts/show', { title: '', authorized: true });
+        res.send({ message: err.message });
+    }
 };
 
 exports.podcastsNew = (req, res, next) => {
     res.render('./../views/podcasts/new', { title: 'New Podcast', authorized: true });
 };
 
-exports.podcastsCreate = (req, res, next) => {
-    // Create form processing promise function
-    var processForm = () => {
-        // Instantiate multer storage
-        const storage = multer.diskStorage({
-            // Set file destination
-            destination: function(req, file, cb) {
-                cb(null, 'uploads/');
-            },
-            // By default, multer removes file extensions so let's add them back
-            filename: function(req, file, cb) {
-                cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-            }
-        });
-        // Instantiate upload form process object
-        let formProcessor = multer({ storage: storage, fileFilter: helpers.fileFilter }).single('file');
-        // Create form promise
-        var formPromise = new Promise(function (resolve, reject) {
-            formProcessor(req, res, function (err) {
-                // Validate file upload
-                if (req.fileValidationError) {
-                    // Return error
-                    reject(req.fileValidationError);
-                } else if (!req.file) {
-                    // Return error
-                    reject('Please select the mp3 file to upload');
-                } else if (err instanceof multer.MulterError) {
-                    // Return error
-                    reject('There was an error processing the file.');
-                } else if (err) {
-                    // Return error
-                    reject('There was an error processing the file.');
-                } else {
-                    // Return success
-                    resolve();
-                }
-            });
-        });
-        // Return form promise 
-        return formPromise;
-    }
-    // Properties
-    var title = null;
-    var description = null;
-    var keywords = null;
-    var pubDate = null;
-    var season = null;
-    var explicit = null;
-    let postSlug = null;
-    var length = null;
-    var lengthString = null;
-    var s3URL = null;
-
+exports.podcastsCreate = async (req, res, next) => {
     const unlink = util.promisify(fs.unlink);
+    let fileDeleted = true;
+    
+    try {
+        // Process form data
+        await upload(req, res);
+        // Validate file upload
+        if (req.fileValidationError) {
+            // Return error
+            return res.status(500).send({ message: req.fileValidationError });
+        } else if (!req.file) {
+            // Return error
+            return res.status(500).send({ message: 'Please select the mp3 file to upload' });
+        }
 
-    // Initiate form processing
-    processForm()
-    .then(s3.backupFile({
-        Bucket: process.env.AWS_S3_RSS_BUCKET + '/backup', 
-        CopySource: process.env.AWS_S3_RSS_BUCKET + '/' + resourceKey, 
-        Key: resourceKey.split('.').join('-' + Date.now() + '.')
-    }))
-    .then(() => {
+        fileDeleted = false;
+
+        console.log(' -- Backing up podcast feed.');
+
+        let backupResponse = await s3.backupFile({
+            Bucket: process.env.AWS_S3_RSS_BUCKET + '/backup', 
+            CopySource: process.env.AWS_S3_RSS_BUCKET + '/' + resourceKey, 
+            Key: resourceKey.split('.').join('-' + Date.now() + '.')
+        });
+
+        if (backupResponse.$response.httpResponse.statusCode !== 200) return res.status(500).send({ message: 'There was an error backing up the feed' });
+
         console.log(' -- Uploading podcast file.');
         // Create file stream 
         var fileStream = fs.createReadStream(req.file.path);
@@ -129,32 +87,31 @@ exports.podcastsCreate = (req, res, next) => {
             console.log('File Error', err);
         });
         // Submit to S3
-        return s3.submitS3File({
+        let uploadResponse = await s3.submitS3File({
             Bucket: process.env.AWS_S3_FILE_BUCKET + '/' + req.body.season, 
             Key: req.file.filename,
             Body: fileStream
-        })
-    })
-    .then(() => {
+        });
+
         console.log(' -- Getting audion duration.');
 
-        return getAudioDurationInSeconds(req.file.path)
-    })
-    .then((duration) => {
+        let duration = await getAudioDurationInSeconds(req.file.path);
+
         console.log(' -- Publishing podcast feed.');
         // Set properties
-        title = helpers.sanitize(req.body.title);
-        description = helpers.sanitize(req.body.description);
-        keywords = helpers.sanitize(req.body.keywords);
-        pubDate = moment(req.body.pubDate);
-        season = req.body.season;
-        explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
-        postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
-        length = duration * 1000;
-        lengthString = new Date(length).toISOString().substr(11, 8);
-        s3URL = podcastURL + season + '/' + encodeURI(req.file.filename);
+        let title = helpers.sanitize(req.body.title);
+        let description = helpers.sanitize(req.body.description);
+        let keywords = helpers.sanitize(req.body.keywords);
+        let tags = keywords.split(',').map(tag => tag.trim());
+        let pubDate = moment(req.body.pubDate);
+        let season = req.body.season;
+        let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
+        let postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
+        let length = duration * 1000;
+        let lengthString = new Date(length).toISOString().substr(11, 8);
+        let s3URL = uploadResponse.Location;
         // Create feed item
-        feedItem = {
+        let feedItem = {
             title: [title],
             'itunes:title': [title],
             'link': [postURL + postSlug],
@@ -178,22 +135,51 @@ exports.podcastsCreate = (req, res, next) => {
             'itunes:keywords': [keywords], 
             'itunes:explicit': [explicit]
         };
-        // Publish feed update 
-        return publishPodcastFeed(feedItem);
-    })
-    .then(() => {
+
+        // Get live data
+        let result = await fetcher(feedURL);
+        // Append item
+        result.rss.channel[0].item.push(feedItem);
+        // Get episode count
+        let episodeCount = result.rss.channel[0].item.length;
+        // Publish feed update
+        let feedResponse = await s3.submitS3File({
+            Bucket: process.env.AWS_S3_RSS_BUCKET, 
+            Key: resourceKey.split('.').join('-test.'), // TODO: Remove this split code
+            Body: xml.jsonToXML(result)
+        })
+
+        console.log(' -- Deleting temp file.');
+
+        // Delete file
+        if (req.file) await unlink(req.file.path);
+
+        fileDeleted = true;
+
+        console.log(' -- Publishing podcast tags');
+
+        let tags_reference = [];
+
+        for (let index = 0; index < tags.length; index++) {
+            const element = tags[index];
+            
+            await wp.publishTags({name: element}, req.session.accessToken);
+        }
+
         console.log(' -- Publishing podcast post.');
-        var size = req.file.size / 1000000
-        var futurePublish = pubDate.isAfter(moment());
+
+        let size = req.file.size / 1000000
+        let futurePublish = pubDate.isAfter(moment());
         // Instantiate podcast post
-        var podcastPost = {
+        let podcastPost = {
             slug: postSlug,
             status: futurePublish ? 'future' : 'publish',
             title: title,
-            content: description,
-            author: 1,
+            content: description + helpers.podcastFooter(),
+            author: req.session.profile.id,
             excerpt: description.length > 250 ? description.slice(0, 250) + '...' : description,
             comment_status: 'closed',
+            tags: tags_reference,
             meta: {
                 audio_file: s3URL,
                 date_recorded: pubDate.format("dd-mm-yyyy"),
@@ -201,7 +187,7 @@ exports.podcastsCreate = (req, res, next) => {
                 episode_type: 'audio',
                 explicit: req.body.explicit,
                 filesize: Math.trunc(size) + ' Mb',
-                // itunes_episode_number: '9',
+                itunes_episode_number: episodeCount,
                 itunes_episode_type: 'full',
                 itunes_season_number: season === '2020' ? '1' : '2',
                 itunes_title: title
@@ -212,11 +198,9 @@ exports.podcastsCreate = (req, res, next) => {
             podcastPost['date'] = pubDate.format();
         }
         // Create podcast post
-        return wp.publishPodcast(podcastPost, req.session.accessToken);
-    })
-    .then((response) => {
+        let succeeded = await wp.publishPodcast(podcastPost, req.session.accessToken);
         // Respond to response
-        if (helpers.isDefined(response)) {
+        if (helpers.isDefined(succeeded)) {
             console.log(' -- Success.');
 
             res.status(200).send({ redirectTo: '/podcasts' });
@@ -225,42 +209,16 @@ exports.podcastsCreate = (req, res, next) => {
             // Return error 
             res.status(500).send({ message: 'There was an error posting the podcast post.' });
         }
-    })
-    .then(() => unlink(req.file.path))
-    .catch((err) => {
+    } catch (err) {
         // Log error message
         console.log(err);
         // Delete file
-        fs.unlink(req.file.path, () => {}); 
+        if (fileDeleted === false) await unlink(req.file.path);
         // Return error 
-        res.status(500).send({ message: err });
-    });
+        res.status(500).send({ message: err.message });
+    }
 };
 
-var getPodcast = () => {
-    return fetch(feedURL, { 
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36', 
-        'accept': 'text/html,application/xhtml+xml' 
-    })
-    .then(response => response.text())
-    .then(xml.parseData)
-}
-
 var parsePodcast = (result) => {
-    return result.rss.channel[0].item.map(item => new Podcast(item));
-}
-
-var publishPodcastFeed = (podcast) => {
-    // Get live data
-    return getPodcast()
-    .then(result => {
-        // Append item
-        result.rss.channel[0].item.push(podcast);
-        // Submit to S3
-        return s3.submitS3File({
-            Bucket: process.env.AWS_S3_RSS_BUCKET, 
-            Key: resourceKey.split('.').join('-test.'), // TODO: Remove this split code
-            Body: xml.jsonToXML(result)
-        })
-    });
+    return result.rss.channel[0].item.map(item => new Podcast(item)).reverse();
 }

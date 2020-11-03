@@ -11,6 +11,7 @@ const sessionController = require('./../controllers/session');
 const postsController = require('./../controllers/posts');
 const podcastsController = require('./../controllers/podcasts');
 const tweetsController = require('./../controllers/tweets');
+const imagesController = require('./../controllers/images');
 
 /**
  * App Variables
@@ -34,6 +35,8 @@ router.get('/dashboard', sessionController.validateSession, (req, res) => {
 
 // Posts
 router.get('/posts', sessionController.validateSession, postsController.postsIndex);
+router.get('/posts/new', sessionController.validateSession, postsController.postsNew);
+router.post('/posts/create', sessionController.validateSession, postsController.postsCreate);
 
 // Podcasts
 router.get('/podcasts', sessionController.validateSession, podcastsController.podcastsIndex);
@@ -44,8 +47,12 @@ router.post('/podcasts/create', sessionController.validateSession, podcastsContr
 router.get('/tweets', sessionController.validateSession, tweetsController.tweetsIndex);
 router.get('/tweets/new', sessionController.validateSession, tweetsController.tweetsNew);
 router.post('/tweets/create', sessionController.validateSession, tweetsController.tweetsCreate);
-router.post('/tweets/:id', sessionController.validateSession, tweetsController.tweetsEdit);
-router.post('/tweets/:id/update', sessionController.validateSession, tweetsController.tweetsUpdate);
 router.post('/tweets/:id/delete', sessionController.validateSession, tweetsController.tweetsDestroy);
+
+// Images
+router.get('/images', sessionController.validateSession, imagesController.imagesIndex);
+router.get('/images/new', sessionController.validateSession, imagesController.imagesNew);
+router.post('/images/create', sessionController.validateSession, imagesController.imagesCreate);
+router.post('/images/:id/delete', sessionController.validateSession, imagesController.imagesDestroy);
 
 module.exports = router;

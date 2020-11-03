@@ -1,0 +1,8 @@
+
+function imagesSetup() {
+
+}
+
+function newImagesSetup() {
+
+}

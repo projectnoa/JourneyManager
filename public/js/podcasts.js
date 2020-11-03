@@ -92,7 +92,3 @@ function newPodcastSetup() {
       }
     });
 }
-
-function showPodcastSetup() {
-    
-}

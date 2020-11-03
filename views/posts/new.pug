@@ -1,0 +1,58 @@
+extends ../layout
+
+block head-content
+  link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/css/tempusdominus-bootstrap-4.min.css", integrity="sha512-PMjWzHVtwxdq7m7GIxBot5vdxUY+5aKP9wpKtvnNBZrVv1srI8tU6xvFMzG8crLNcMj/8Xl/WWmo/oAP/40p1g==", crossorigin="anonymous")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/tempusdominus-bootstrap-4/5.1.2/js/tempusdominus-bootstrap-4.min.js", integrity="sha512-2JBCbWoMJPH+Uj7Wq5OLub8E5edWHlTM4ar/YJkZh3plwB2INhhOC3eDoqHm1Za/ZOSksrLlURLoyXVdfQXqwg==", crossorigin="anonymous")
+
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.2/jquery.validate.min.js", integrity="sha512-UdIMMlVx0HEynClOIFSyOrPggomfhBKJE28LKl8yR3ghkgugPnG6iLfRfHwushZl1MOPSY6TsuBDGPK2X4zYKg==", crossorigin="anonymous")
+
+  link(rel="stylesheet" href="/css/posts.css")
+  script(src="/js/posts.js")
+
+  link(rel="stylesheet" href="/css/validation.css")
+  script(src="/js/validation.js")
+  
+  meta(name="page-id", content="newPost")
+
+block layout-content
+  h1.mt-5.text-white.text-center Create a post draft
+  br
+  
+  div.row
+    div.col-xl-6.offset-xl-3.col-lg-8.offset-lg-2.col-10.offset-1
+      div.card.p-3
+        div.card-text
+          form(action="/podcasts/create", method="post", enctype="multipart/form-data")
+            div.form-group
+                label(for='title') Title
+                input.form-control(type="text", name="title", placeholder="Enter an episode title", required=true)
+            div.form-group
+                label(for='description') Description
+                textarea.form-control(name="description", placeholder="Enter the episode description", required=true)
+            div.form-group
+                label(for='keywords') Keywords
+                input.form-control(type="text", name="keywords", placeholder="Enter some keywords separated by comma", required=true)
+                small.form-text.text-muted Example: Mental health, Habits, Success.
+            div.form-group
+                div.row
+                    div.col-lg-6
+                        label(for='season') Season
+                        select.form-control(name='season')
+                            option(value="2020", selected=true) 2020
+                            option(value="2021") 2021
+                    div.col-lg-6
+                        label(for='pubDate') Publication date
+                        div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
+                            input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
+                            div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
+                                span.input-group-text
+                                    i.fas.fa-calendar-alt
+            div.form-check
+                input.form-check-input(type="checkbox", name="explicit")
+                label.form-check-label(for='explicit') Is explicit?
+            div.form-group
+                label.sr-only(for='file') Podcast file
+                input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload', required=true)
+            br
+            center
+              input.btn.btn-md.btn-primary.px-4(type="submit", value="Publish")

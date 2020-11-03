@@ -1,0 +1,16 @@
+extends ../layout
+
+block head-content
+  link(rel="stylesheet" href="/css/images.css")
+  script(src="/js/images.js")
+
+  meta(name="page-id", content="images")
+
+block layout-content
+  h1.mt-5.text-white.text-center Images
+  br
+
+  each item in items
+    h3= item.title
+    each image in item.images
+        img(src=image.url, alt=image.title, width=image.width, height=image.height)

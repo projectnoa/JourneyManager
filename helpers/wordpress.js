@@ -35,8 +35,21 @@ exports.publishPodcast = (item, token) => {
     .create(item)
 }
 
+exports.publishPostDraft = (item, token) => {
+    // Publish post draft
+    return wp.posts()
+    .setHeaders( 'Authorization', 'Bearer ' + token )
+    .create(item)
+}
+
 exports.publishTags = (item, token) => {
     return wp.tags()
     setHeaders( 'Authorization', 'Bearer ' + token )
     .create(item)
+}
+
+exports.getTags = (names, token) => {
+    return wp.tags()
+    setHeaders( 'Authorization', 'Bearer ' + token )
+    .param('name', names)
 }

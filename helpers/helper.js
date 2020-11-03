@@ -38,6 +38,22 @@ exports.sanitize = (string, removeDiscouragedChars = true) => {
             "(?:[^\\uD800-\\uDBFF]|^)[\\uDC00-\\uDFFF]))", "g");
         string = string.replace(regex, "");
     }
+
+    string = string.replace(/\r/g, '');
  
     return string;
+}
+
+exports.podcastFooter = () => {
+    const spacer = '<div style="height:100px" aria-hidden="true" class="wp-block-spacer"></div>';
+    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewtopic.php?f=11">join the discussion</a>!</h3>';
+
+    return spacer + discussion;
+}
+
+exports.postFooter = () => {
+    const spacer = '<div style="height:100px" aria-hidden="true" class="wp-block-spacer"></div>';
+    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewtopic.php?f=10">join the discussion</a>!</h3>';
+
+    return spacer + discussion;
 }
