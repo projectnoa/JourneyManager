@@ -44,16 +44,34 @@ exports.sanitize = (string, removeDiscouragedChars = true) => {
     return string;
 }
 
+exports.formatPost = (text) => {
+    // Regular expressions
+    const linkRegex = /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/ig;
+    const emailRegex = /.*@.*/;
+    // Format paragraphs
+    let formatedText = text.split(/\n/).map(paragraph => paragraph.trim().length > 0 ? `<p>${paragraph.trim()}</p>` : '').filter(item => item.length > 0).join('');
+    // Format links
+    formatedText = formatedText.replace(linkRegex, (match) => {
+        if (emailRegex.test(match)) {
+            return `<a href="mailto:${match}">${match}</a>`;
+        } else {
+            return `<a href="${match}">${match}</a>`;
+        }
+    });
+
+    return formatedText;
+}
+
 exports.podcastFooter = () => {
     const spacer = '<div style="height:100px" aria-hidden="true" class="wp-block-spacer"></div>';
-    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewtopic.php?f=11">join the discussion</a>!</h3>';
+    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewforum.php?f=11">join the discussion</a>!</h3>';
 
     return spacer + discussion;
 }
 
 exports.postFooter = () => {
     const spacer = '<div style="height:100px" aria-hidden="true" class="wp-block-spacer"></div>';
-    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewtopic.php?f=10">join the discussion</a>!</h3>';
+    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewforum.php?f=10">join the discussion</a>!</h3>';
 
     return spacer + discussion;
 }

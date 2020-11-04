@@ -145,7 +145,7 @@ exports.podcastsCreate = async (req, res, next) => {
         // Publish feed update
         let feedResponse = await s3.submitS3File({
             Bucket: process.env.AWS_S3_RSS_BUCKET, 
-            Key: resourceKey.split('.').join('-test.'), // TODO: Remove this split code
+            Key: resourceKey,
             Body: xml.jsonToXML(result)
         })
 
@@ -158,13 +158,7 @@ exports.podcastsCreate = async (req, res, next) => {
 
         console.log(' -- Publishing podcast tags');
 
-        let tags_reference = [];
-
-        for (let index = 0; index < tags.length; index++) {
-            const element = tags[index];
-            
-            await wp.publishTags({name: element}, req.session.accessToken);
-        }
+        let tag_ids = await createTags(tags, req.session.accessToken);
 
         console.log(' -- Publishing podcast post.');
 
@@ -175,19 +169,19 @@ exports.podcastsCreate = async (req, res, next) => {
             slug: postSlug,
             status: futurePublish ? 'future' : 'publish',
             title: title,
-            content: description + helpers.podcastFooter(),
+            content: helpers.formatPost(description) + helpers.podcastFooter(),
             author: req.session.profile.id,
             excerpt: description.length > 250 ? description.slice(0, 250) + '...' : description,
             comment_status: 'closed',
-            tags: tags_reference,
+            tags: tag_ids,
             meta: {
                 audio_file: s3URL,
-                date_recorded: pubDate.format("dd-mm-yyyy"),
+                date_recorded: pubDate.format("DD-MM-yyyy"),
                 duration: lengthString,
                 episode_type: 'audio',
                 explicit: req.body.explicit,
                 filesize: Math.trunc(size) + ' Mb',
-                itunes_episode_number: episodeCount,
+                itunes_episode_number: '' + episodeCount,
                 itunes_episode_type: 'full',
                 itunes_season_number: season === '2020' ? '1' : '2',
                 itunes_title: title
@@ -221,4 +215,19 @@ exports.podcastsCreate = async (req, res, next) => {
 
 var parsePodcast = (result) => {
     return result.rss.channel[0].item.map(item => new Podcast(item)).reverse();
+}
+
+var createTags = async (tags, token) => {
+    let tag_ids = [];
+
+    for (let index = 0; index < tags.length; index++) {  
+        try {
+            let tag_id = await wp.publishTag({ 'name': tags[index] }, token);
+            tag_ids.push(tag_id);
+        } catch (err) {
+            tag_ids.push(err.data.term_id);
+        }
+    }
+
+    return tag_ids;
 }

@@ -42,14 +42,14 @@ exports.publishPostDraft = (item, token) => {
     .create(item)
 }
 
-exports.publishTags = (item, token) => {
+exports.publishTag = (item, token) => {
     return wp.tags()
-    setHeaders( 'Authorization', 'Bearer ' + token )
+    .setHeaders( 'Authorization', 'Bearer ' + token )
     .create(item)
 }
 
 exports.getTags = (names, token) => {
     return wp.tags()
-    setHeaders( 'Authorization', 'Bearer ' + token )
+    .setHeaders( 'Authorization', 'Bearer ' + token )
     .param('name', names)
 }
