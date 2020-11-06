@@ -52,7 +52,10 @@ router.post('/tweets/:id/delete', sessionController.validateSession, tweetsContr
 // Images
 router.get('/images', sessionController.validateSession, imagesController.imagesIndex);
 router.get('/images/new', sessionController.validateSession, imagesController.imagesNew);
-router.post('/images/create', sessionController.validateSession, imagesController.imagesCreate);
-router.post('/images/:id/delete', sessionController.validateSession, imagesController.imagesDestroy);
+router.post('/images/create', sessionController.validateSession, imagesController.imagesCreateCollection);
+router.post('/images/createCover', sessionController.validateSession, imagesController.imagesCreateCover);
+router.post('/images/createImage', sessionController.validateSession, imagesController.imagesCreateImage);
+router.post('/images/:id/delete', sessionController.validateSession, imagesController.imagesCollectionDestroy);
+router.post('/images/:collection_id/image/:id/delete', sessionController.validateSession, imagesController.imagesImageDestroy);
 
 module.exports = router;

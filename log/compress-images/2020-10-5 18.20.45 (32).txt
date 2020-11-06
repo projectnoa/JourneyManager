@@ -1,0 +1,7 @@
+File from: [uploads/**/!(*-min).jpeg]
+
+File to: [-]
+
+Compression algorithm: [-]
+
+Description:  Directory is empty!: 

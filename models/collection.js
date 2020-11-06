@@ -6,6 +6,7 @@ function Collection(item) {
     this.title = item.$.title || null;
     this.date = dateFormat(new Date(item.$.date), "dddd, mmmm dS, yyyy") || null;
     this.images = item.image.map(image => { return { id: image.$.id, title: image.$.title, url: image.$.url, width: image.$.width, height: image.$.height} }) || null;
+    this.covers = item.image.map(image => { return { id: image.$.id, title: image.$.title, url: image.$.url, width: image.$.width, height: image.$.height} }) || null;
 };
 
 module.exports = Collection;

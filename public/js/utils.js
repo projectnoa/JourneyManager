@@ -36,6 +36,29 @@ function setNoticeBehavior() {
     });
 }
 
+function setDeleteBehavior() {
+    let elements = document.querySelectorAll('[data-behavior~="delete"]');
+
+    elements.forEach(element => 
+        element.addEventListener('click', (event) => {
+            let target = event.target;
+
+            let action = target.dataset.action;
+            let message = target.dataset.message;
+
+            displayConfirm(message, () => {
+                axios.post(action)
+                  .then(function (response) {
+                    console.log(response);
+                  })
+                  .catch(function (error) {
+                    console.log(error);
+                  });
+            });
+        }, false)
+    );
+}
+
 function setConfirmBehavior() {
     // Get elements
     let elements = document.querySelectorAll('[data-behavior~="display-confirm"]');
@@ -82,7 +105,7 @@ function displayConfirm(text, callback) {
         // Get element
         let target = event.target;
         // Run callback 
-        callback();
+        callback(target);
     });
 }
 

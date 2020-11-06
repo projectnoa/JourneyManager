@@ -1,6 +1,9 @@
 extends ../layout
 
 block head-content
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.js", integrity="sha512-9WciDs0XP20sojTJ9E7mChDXy6pcO0qHpwbEJID1YVavz2H6QBz5eLoDD8lseZOb2yGT8xDNIV7HIe1ZbuiDWg==", crossorigin="anonymous")
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.css", integrity="sha512-bbUR1MeyQAnEuvdmss7V2LclMzO+R9BzRntEE57WIKInFVQjvX7l7QZSxjNDt8bg41Ww05oHSh0ycKFijqD7dA==", crossorigin="anonymous")
+  
   link(rel="stylesheet" href="/css/images.css")
   script(src="/js/images.js")
 
@@ -11,6 +14,37 @@ block layout-content
   br
 
   each item in items
-    h3= item.title
-    each image in item.images
-        img(src=image.url, alt=image.title, width=image.width, height=image.height)
+    div.card
+      div.card-header(id=`heading-${item.id}`)
+        div.row.no-gutters
+          div.col
+            h3.float-left= item.title
+          div.col-auto
+            button.btn.btn-link.p-1.float-right(type='button', data-toggle='collapse', data-target=`#collapse-${item.id}`, aria-expanded='false', aria-controls=item.id)
+              i.fas.fa-angle-down.fa-2x
+      div.collapse(id=`collapse-${item.id}`, aria-labelledby=`heading-${item.id}`)
+        div.card-body
+          div.card-columns
+            div.card.dopzone
+              div.card-body
+                div.cover-image.image-upload(data-behavior='cover-image', data-title="Drop cover here", data-id=item.id)
+            each image in item.images
+              div.card
+                img.card-img-top(src=image.url, alt=image.title)
+                div.card-body
+                  div.card-text
+                    small.text-muted= image.url
+                    span.float-right
+                      i.fas.fa-trash.text-danger(style='cursor: pointer;', data-behavior='delete', data-action=`/images/${item.id}/image/${image.id}/delete`, data-message='Are you sure you want to delete this image? Make sure you have removed it from the post beforehand.')
+          div.card-columns
+            div.card.dopzone
+              div.card-body
+                div.post-images.image-upload(data-behavior='post-images', data-title="Drop images here", data-id=item.id)
+            each image in item.images
+              div.card
+                img.card-img-top(src=image.url, alt=image.title)
+                div.card-body
+                  div.card-text
+                    small.text-muted= image.url
+                    span.float-right
+                      i.fas.fa-trash.text-danger(style='cursor: pointer;', data-behavior='delete', data-action=`/images/${item.id}/image/${image.id}/delete`, data-message='Are you sure you want to delete this image? Make sure you have removed it from the post beforehand.')

@@ -11,7 +11,9 @@ window.addEventListener("load", () => {
     // Check for pending notice to display 
     checkForNotice();
     // Set notice behaviors
-    setNoticeBehavior()
+    setNoticeBehavior();
     // Set confirm behaviors
-    setConfirmBehavior()
+    setConfirmBehavior();
+    // Set delete behaviors 
+    setDeleteBehavior();
 });
