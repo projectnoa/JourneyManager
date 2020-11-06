@@ -27,3 +27,11 @@ html, body {
     background-repeat: no-repeat;
     background-position: center;
 }
+
+.mirror {
+    transform: scaleX(-1);
+}
+
+.pointer {
+    cursor: pointer;
+}

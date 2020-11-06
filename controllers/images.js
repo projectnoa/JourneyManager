@@ -7,15 +7,19 @@
 const util = require('util');
 
 var fs = require('fs');
+const path = require("path");
 
 var moment = require('moment');
+
+var sizeOf = require('image-size');
 
 var Collection = require('./../models/collection');
 
 const helpers = require('./../helpers/helper');
 const fetcher = require('./../helpers/fetcher');
 const s3 = require('./../helpers/s3');
-const upload = require('./../helpers/imagesUpload');
+const xml = require('./../helpers/xml');
+const upload = require('./../helpers/imageUpload');
 const imageCompressor = require('./../helpers/imageCompressor');
 
 /**
@@ -47,85 +51,66 @@ exports.imagesNew = (req, res, next) => {
 };
 
 exports.imagesCreateCollection = async (req, res, next) => {
+    // Get live data
+    let result = await fetcher(feedURL);
+    // Append item
+    result.resources.collection.push({ $: { title: req.body.title, id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
 
-}
-
-exports.imagesCreateCover = async (req, res, next) => {
-    const unlink = util.promisify(fs.unlink);
-
-    let cleanup = [];
-
-    try {
-        // Process form data
-        await upload(req, res);
-        // console.log(req.files);
-
-        if (req.files.length <= 0) {
-            return res.status(500).send({ message: `You must select at least 1 file.` });
-        }
-
-        console.log(' -- Compressing images.');
-
-        const { statistics, errors } = await imageCompressor();
-
-        // Upload files 
-        console.log(' -- Uploading image files.');
-                    
-        let response = uploadImage(req.files[0]);
-
-        // Get live data
-        let result = await fetcher(feedURL);
-        // Append item
-        result.resources.collection;
-
-        // Delete file
-        console.log(' -- Deleting image files.');
-
-        req.files.forEach(file => { cleanup.push(deleteTemp(file, unlink)) });
-        // Respond
-        console.log(' -- Success.');
-        res.status(200).send({ redirectTo: '/images' });
-    } catch (err) {
-        // Log error message
-        console.log(err);
-
-        if (err.code === "LIMIT_UNEXPECTED_FILE") {
-            return res.status(500).send({ message: "Too many files to upload." });
-        }
-        // Delete file
-        req.files.forEach(file => { cleanup.push(deleteTemp(file, unlink)) });
-        // Return error 
-        res.status(500).send({ message: `Error when trying upload many files: ${err}` });
-    }
+    // Publish feed update
+    let feedResponse = await s3.submitS3File({
+        Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+        Key: resourceKey,
+        Body: xml.jsonToXML(result),
+        ACL: 'public-read'
+    });
 }
 
 exports.imagesCreateImage = async (req, res, next) => {
     const unlink = util.promisify(fs.unlink);
 
-    let responses = [];
-    let cleanup = [];
-
     try {
         // Process form data
         await upload(req, res);
         // console.log(req.files);
 
-        if (req.files.length <= 0) {
-            return res.status(500).send({ message: `You must select at least 1 file.` });
-        }
-
         console.log(' -- Compressing images.');
 
         const { statistics, errors } = await imageCompressor();
 
+        if (errors.length > 0) throw errors[0];
+
         // Upload files 
         console.log(' -- Uploading image files.');
-                    
-        req.files.array.forEach(file => { responses.push(uploadImage(file)) });
+
+        const compressed_data = statistics[0];
+        const compressed_path = path.join(`${__dirname}/../${compressed_data.path_out_new}`);
+        const compressed_name = path.basename(compressed_data.path_out_new);
+        let response = await uploadImage({ filename: compressed_name, path: compressed_path });
+
+        var dimensions = sizeOf(compressed_data.path_out_new);
+
+        // Get live data
+        let result = await fetcher(feedURL);
+        // Append item
+        result.resources.collection.find(item => item.$.id == req.body.collection_id);
+        let updatedResult = updateCollection(result, req.body.collection_id, (element) => {
+            element.image.push({ $: { id: new Date().getTime(), title: compressed_name, url: response.Location, width: dimensions.width, height: dimensions.height } });
+
+            return element;
+        });
+
+        // Publish feed update
+        let feedResponse = await s3.submitS3File({
+            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Key: resourceKey,
+            Body: xml.jsonToXML(updatedResult),
+            ACL: 'public-read'
+        });
+
         // Delete file
         console.log(' -- Deleting image files.');
 
-        req.files.array.forEach(file => { cleanup.push(deleteTemp(file, unlink)) });
+        deleteTemp(req.file, unlink);
         // Respond
         console.log(' -- Success.');
         res.status(200).send({ redirectTo: '/images' });
@@ -137,9 +122,45 @@ exports.imagesCreateImage = async (req, res, next) => {
             return res.status(500).send({ message: "Too many files to upload." });
         }
         // Delete file
-        req.files.array.forEach(file => { cleanup.push(deleteTemp(file, unlink)) });
+        deleteTemp(req.file, unlink);
         // Return error 
         res.status(500).send({ message: `Error when trying upload many files: ${err}` });
+    }
+}
+
+exports.imagesProcess = async (req, res, next) => {
+    const unlink = util.promisify(fs.unlink);
+
+    try {
+        // Process form data
+        await upload(req, res);
+
+        console.log(' -- Compressing images.');
+
+        const { statistics, errors } = await imageCompressor();
+
+        if (errors.length > 0) throw errors[0];
+
+        const compressed_data = statistics[0];
+        const filePath = compressed_data.path_out_new;
+        const filename = path.basename(compressed_data.path_out_new);
+
+        deleteTemp(req.file, unlink)
+
+        res.download(filePath, filename, (err) => {
+            if (err) {
+              console.log(err); // Check error if you want
+            }
+          
+            fs.unlinkSync(filePath); // If you don't need callback
+        });
+    } catch (err) {
+        // Log error message
+        console.log(err);
+
+        if (err.code === "LIMIT_UNEXPECTED_FILE") {
+            return res.status(500).send({ message: "Too many files to upload." });
+        }
     }
 };
 
@@ -189,6 +210,19 @@ var parseImages = (result) => {
 
 var removeImage = (id) => {
 
+}
+
+var updateCollection = (result, id, updateCallback) => {
+    for (let index = 0; index < result.resources.collection.length; index++) {
+        const element = result.resources.collection[index];
+
+        if (element.$.id == id) {
+            result.resources.collection[index] = updateCallback(element);
+            break;
+        }
+    }
+
+    return result;
 }
 
 var uploadImage = async (file) => {

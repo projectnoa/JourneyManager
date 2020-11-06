@@ -1,17 +1,17 @@
 
-img {
+.container img {
     display: block;
     max-width: 350px;
     max-height: 350px;
-    width: auto;
+    /* width: auto; */
     height: auto;
     object-fit: contain;
 }
 
-.dopzone {
+.container .dopzone {
     min-height: 140px;
 }
-.image-upload {
+.container .image-upload {
     position: relative;
     width: 100%;
     height: 100%;
@@ -20,13 +20,13 @@ img {
     cursor: pointer;
     box-shadow: 0 0 5px solid currentColor;
 }
-.post-images {
+.container .post-images {
     background-color: red;
 }
-.cover-image {
+.container .cover-image {
     background-color: blue;
 }
-.image-upload:before {
+.container .image-upload:before {
     content: attr(data-title);
     position: absolute;
     top: 0;
@@ -42,7 +42,14 @@ img {
     transition: all 0.3s cubic-bezier(.25, .8, .25, 1);
     overflow: hidden;
 }
-.image-upload:hover > .image-upload:before {
+.container .image-upload:hover > .image-upload:before {
     border-style: solid;
     box-shadow: inset 0px 0px 0px 0.25em currentColor;
 }
+
+.flex-centered {
+    display: flex;
+    justify-content: center;
+    margin-top: 31px;
+    height: 46px;
+  }

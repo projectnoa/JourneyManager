@@ -1,24 +1,24 @@
 /* Data */
-em.hashtag {
+.container em.hashtag {
     font-weight: bolder;
 }
 
-em.url {
+.container em.url {
     color: blue;
 }
 
 /* highlight excess text */
-.tweet-composer {
+.container .tweet-composer {
     position: relative;
     z-index: 1;
 }
 
-.js-keeper-editor {
+.container .js-keeper-editor {
     border: 1px solid #dadada;  
 }
   
-.js-keeper-editor,
-.js-keeper-placeholder-back {
+.container .js-keeper-editor,
+.container .js-keeper-placeholder-back {
     background: transparent;
     font-family: Helvetica, Arial, sans-serif;
     font-size: 14px; /* Same font for both. */
@@ -29,7 +29,7 @@ em.url {
     resize: vertical;
     width: 100%;
 }
-.js-keeper-placeholder-back {
+.container .js-keeper-placeholder-back {
     bottom: 0;
     color: transparent;
     left: 0;
@@ -40,14 +40,14 @@ em.url {
     word-wrap: break-word;
     z-index: -1;
 }
-.js-keeper-placeholder-back em.excess {
+.container .js-keeper-placeholder-back em.excess {
     background: orange !important;
 }
-.js-keeper-placeholder-back em.hashtag {
+.container .js-keeper-placeholder-back em.hashtag {
     background: lightblue !important;
     font-weight: normal;
 }
-.js-keeper-placeholder-back em.url {
+.container .js-keeper-placeholder-back em.url {
     background: lightgreen !important;
     color: black;
 }

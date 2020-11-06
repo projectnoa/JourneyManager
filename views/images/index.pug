@@ -10,7 +10,7 @@ block head-content
   meta(name="page-id", content="images")
 
 block layout-content
-  h1.mt-5.text-white.text-center Images
+  h1.mt-5.text-white.text-center Post Images
   br
 
   each item in items
@@ -27,19 +27,7 @@ block layout-content
           div.card-columns
             div.card.dopzone
               div.card-body
-                div.cover-image.image-upload(data-behavior='cover-image', data-title="Drop cover here", data-id=item.id)
-            each image in item.images
-              div.card
-                img.card-img-top(src=image.url, alt=image.title)
-                div.card-body
-                  div.card-text
-                    small.text-muted= image.url
-                    span.float-right
-                      i.fas.fa-trash.text-danger(style='cursor: pointer;', data-behavior='delete', data-action=`/images/${item.id}/image/${image.id}/delete`, data-message='Are you sure you want to delete this image? Make sure you have removed it from the post beforehand.')
-          div.card-columns
-            div.card.dopzone
-              div.card-body
-                div.post-images.image-upload(data-behavior='post-images', data-title="Drop images here", data-id=item.id)
+                div.post-images.image-upload.text-primary.font-weight-bold(data-behavior='post-images', data-title="Drop images here", data-id=item.id)
             each image in item.images
               div.card
                 img.card-img-top(src=image.url, alt=image.title)

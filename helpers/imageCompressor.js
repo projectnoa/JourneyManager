@@ -1,7 +1,7 @@
 
 const { compress } = require('compress-images/promise');
 
-const INPUT_PATH = 'uploads/**/*.{jpg,JPG,jpeg,JPEG,png}';
+const INPUT_PATH = 'uploads/*.{jpg,JPG,jpeg,JPEG,png}';
 const OUTPUT_PATH = 'uploads/processed/';
 
 const compressImages = () => {

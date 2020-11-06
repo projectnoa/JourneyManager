@@ -147,7 +147,7 @@ exports.podcastsCreate = async (req, res, next) => {
             Bucket: process.env.AWS_S3_RSS_BUCKET, 
             Key: resourceKey,
             Body: xml.jsonToXML(result)
-        })
+        });
 
         console.log(' -- Deleting temp file.');
 
