@@ -4,25 +4,13 @@
  * Required External Modules
  */
 
-const util = require('util');
-
-var fs = require('fs');
-
 var moment = require('moment');
 
 var Post = require('./../models/post');
 
 const helpers = require('./../helpers/helper');
-const fetcher = require('./../helpers/fetcher');
-const s3 = require('./../helpers/s3');
 const wp = require('./../helpers/wordpress');
 const upload = require('./../helpers/imageUpload');
-
-/**
- * Variables
- */
-
-
 
 /**
  *  Methods
@@ -33,7 +21,7 @@ exports.postsIndex = async (req, res, next) => {
         // Get posts
         let result = await wp.getPosts(req.session.accessToken)
 
-        let posts = result.map(item => new Post(0, item.title.rendered, item.content.rendered)).reverse();
+        let posts = result.map(item => new Post(0, item.title.rendered, item.content.rendered));
 
         res.render('./posts/index', { title: 'Posts', authorized: true, items: posts });
     } catch (err) {
@@ -49,36 +37,36 @@ exports.postsNew = (req, res, next) => {
 };
 
 exports.postsCreate = async (req, res, next) => {
-    const unlink = util.promisify(fs.unlink);
-
     try {
         // Process form data
         await upload(req, res);
-        // console.log(req.files);
-
-        console.log(' -- Publishing podcast feed.');
         // Set properties
         var title = helpers.sanitize(req.body.title);
-        var description = '';
         var excerpt = helpers.sanitize(req.body.excerpt);
         var keywords = helpers.sanitize(req.body.keywords);
+        let tags = keywords.split(',').map(tag => tag.trim());
         var postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
         
+        console.log(' -- Publishing podcast tags');
+
+        let tag_ids = await createTags(tags, req.session.accessToken);
+
         // Instantiate podcast post
         var post = {
             slug: postSlug,
             status: 'draft',
             title: title,
-            content: description,
+            content: helpers.postFooter(),
             author: req.session.userId,
             excerpt: excerpt,
-            comment_status: 'closed'
+            comment_status: 'closed',
+            tags: tag_ids
         }
+
+        console.log(' -- Publishing post draft.');
+
         // Create post draft
         let succeeded = await wp.publishPostDraft(post, req.session.accessToken);
-
-        // Delete file
-        if (req.file) await unlink(req.file.path);
 
         // Respond to response
         if (helpers.isDefined(succeeded)) {
@@ -93,9 +81,27 @@ exports.postsCreate = async (req, res, next) => {
     } catch (err) {
         // Log error message
         console.log(err);
-        // Delete file
-        if (req.file) await unlink(req.file.path);
         // Return error 
         res.status(500).send({ message: err.message });
     }
 };
+
+var createTags = async (tags, token) => {
+    let tag_ids = [];
+
+    for (let index = 0; index < tags.length; index++) {  
+        try {
+            let tag_data = await wp.publishTag({ 'name': tags[index] }, token);
+
+            if (tag_data.id !== undefined) {
+                tag_ids.push(tag_data.id);
+            } else {
+                tag_ids.push(tag_data);
+            }
+        } catch (err) {
+            tag_ids.push(err.data.term_id);
+        }
+    }
+
+    return tag_ids;
+}

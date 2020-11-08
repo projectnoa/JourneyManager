@@ -28,6 +28,29 @@ var setPodcastFormValidationBehavior = () => {
     });
 };
 
+var setPostFormValidationBehavior = () => {
+    let form = document.querySelector('form[action="/posts/create"]');
+
+    $(form).validate({
+        debug: false,
+        rules: {
+            "title": {
+                required: true,
+                rangelength: [10, 200]
+            },
+            "excerpt": {
+                required: false,
+                rangelength: [10, 1000]
+            },
+            "keywords": {
+                required: true,
+                rangelength: [4, 200]
+            }
+        },
+        showErrors: showValidationErrors
+    });
+};
+
 let showValidationErrors = function (errorMap, errorList) {
     this.successList.forEach(item => $(item).popover('hide'));
 

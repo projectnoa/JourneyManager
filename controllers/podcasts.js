@@ -222,8 +222,13 @@ var createTags = async (tags, token) => {
 
     for (let index = 0; index < tags.length; index++) {  
         try {
-            let tag_id = await wp.publishTag({ 'name': tags[index] }, token);
-            tag_ids.push(tag_id);
+            let tag_data = await wp.publishTag({ 'name': tags[index] }, token);
+
+            if (tag_data.id !== undefined) {
+                tag_ids.push(tag_data.id);
+            } else {
+                tag_ids.push(tag_data);
+            }
         } catch (err) {
             tag_ids.push(err.data.term_id);
         }
