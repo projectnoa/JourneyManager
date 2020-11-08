@@ -10,9 +10,10 @@ block layout-content
   h1.mt-5.text-white.text-center Podcasts
   br
 
-  div.row
-    a.btn.btn-sm.text-white.ml-auto(href='/podcasts/new')
-      i.fas.fa-plus.fa-2x
+  div.row.no-gutters
+    div.col
+      a.btn.btn-sm.text-white.float-right(href='/podcasts/new')
+        i.fas.fa-plus.fa-2x
   each item in items
     div.row
       div.card.w-100.p-3

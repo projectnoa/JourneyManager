@@ -25,12 +25,8 @@ exports.submitS3File = (params) => {
     return s3.upload(params).promise();
 }
 
-exports.createS3File = (data, key, bucket) => {
-    return {
-        Bucket: bucket, 
-        Key: key,
-        Body: data
-    };
+exports.deleteS3File = (bucket, key) => {
+    return s3.deleteObject({ Bucket: bucket, Key: key }).promise();
 }
 
 exports.backupFile = (params) => {

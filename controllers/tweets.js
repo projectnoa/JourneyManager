@@ -52,6 +52,9 @@ exports.tweetsCreate = async (req, res, next) => {
   // Save tweet
   try {
     let result = await fetcher(feedURL);
+
+    if (result.rss.channel[0].item == undefined) result.rss.channel[0].item = [];
+
     // Append item
     result.rss.channel[0].item.push(tweet);
     // Submit to S3
@@ -104,5 +107,5 @@ exports.tweetsDestroy = async (req, res, next) => {
 };
 
 var parseTweets = (result) => {
-  return result.rss.channel[0].item.map(item => new Tweet(item)).reverse();
+  return result.rss.channel[0].item != undefined ? result.rss.channel[0].item.map(item => new Tweet(item)).reverse() : [];
 }

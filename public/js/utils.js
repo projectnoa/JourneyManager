@@ -72,12 +72,9 @@ function setConfirmBehavior() {
             // Get confirm target
             let form = target.dataset.target;
             // Display confirm
-            displayConfirm(text, () => { 
-                // Create event
-                let submit_event = document.createEvent("Event");
-                submit_event.initEvent("submit", true, true);
+            displayConfirm(text, () => {
                 // Trigger submit event
-                document.querySelector("[data-id~='" + form + "']").dispatchEvent(submit_event);
+                document.querySelector("[data-id~='" + form + "']").submit();
             });
         });
     });
@@ -100,8 +97,8 @@ function displayConfirm(text, callback) {
     // Display modal
     $(modal).modal('show');
     // Add event listener
-    modal.querySelector('button[data-behavior~="confirmed"]')
-    .addEventListener('click', (event) => {
+    let confirmAction = modal.querySelector('button[data-behavior~="confirmed"]');
+    confirmAction.addEventListener('click', (event) => {
         // Get element
         let target = event.target;
         // Run callback 

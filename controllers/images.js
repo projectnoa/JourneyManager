@@ -51,27 +51,44 @@ exports.imagesNew = (req, res, next) => {
 };
 
 exports.imagesCreateCollection = async (req, res, next) => {
-    // Get live data
-    let result = await fetcher(feedURL);
-    // Append item
-    result.resources.collection.push({ $: { title: req.body.title, id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
+    try {
+        // Get live data
+        let result = await fetcher(feedURL);
+        // If no items then initialize
+        if (result.resources.collection == undefined) {
+            result.resources = { collection: [] };
+        }
+        // Append item
+        result.resources.collection.push({ $: { title: req.body.title, id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
 
-    // Publish feed update
-    let feedResponse = await s3.submitS3File({
-        Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
-        Key: resourceKey,
-        Body: xml.jsonToXML(result),
-        ACL: 'public-read'
-    });
+        // Publish feed update
+        let feedResponse = await s3.submitS3File({
+            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Key: resourceKey,
+            Body: xml.jsonToXML(result),
+            ACL: 'public-read'
+        });
+
+        res.redirect('/images');
+    } catch (err) {
+        // Log error message
+        console.log(err);
+        // Return error 
+        res.status(500).send({ message: err.message });
+    }
 }
 
 exports.imagesCreateImage = async (req, res, next) => {
     const unlink = util.promisify(fs.unlink);
+    let compressed_data = {};
 
     try {
         // Process form data
         await upload(req, res);
         // console.log(req.files);
+
+        // Get image collection id
+        var collection_id = req.body.collection_id;
 
         console.log(' -- Compressing images.');
 
@@ -82,18 +99,22 @@ exports.imagesCreateImage = async (req, res, next) => {
         // Upload files 
         console.log(' -- Uploading image files.');
 
-        const compressed_data = statistics[0];
+        compressed_data = statistics[0];
         const compressed_path = path.join(`${__dirname}/../${compressed_data.path_out_new}`);
         const compressed_name = path.basename(compressed_data.path_out_new);
         let response = await uploadImage({ filename: compressed_name, path: compressed_path });
 
         var dimensions = sizeOf(compressed_data.path_out_new);
 
+        // Delete file
+        deleteTemp({ path: compressed_data.path_out_new }, unlink);
+
         // Get live data
         let result = await fetcher(feedURL);
         // Append item
-        result.resources.collection.find(item => item.$.id == req.body.collection_id);
-        let updatedResult = updateCollection(result, req.body.collection_id, (element) => {
+        let updatedResult = updateCollection(result, collection_id, (element) => {
+            if (element.image == undefined) element.image = [];
+
             element.image.push({ $: { id: new Date().getTime(), title: compressed_name, url: response.Location, width: dimensions.width, height: dimensions.height } });
 
             return element;
@@ -123,8 +144,9 @@ exports.imagesCreateImage = async (req, res, next) => {
         }
         // Delete file
         deleteTemp(req.file, unlink);
+        if (compressed_data.path_out_new) deleteTemp({ path: compressed_data.path_out_new }, unlink);
         // Return error 
-        res.status(500).send({ message: `Error when trying upload many files: ${err}` });
+        res.status(500).send({ message: `Error when trying upload many files: ${err.message}` });
     }
 }
 
@@ -145,7 +167,8 @@ exports.imagesProcess = async (req, res, next) => {
         const filePath = compressed_data.path_out_new;
         const filename = path.basename(compressed_data.path_out_new);
 
-        deleteTemp(req.file, unlink)
+        // Delete file
+        deleteTemp(req.file, unlink);
 
         res.download(filePath, filename, (err) => {
             if (err) {
@@ -158,58 +181,92 @@ exports.imagesProcess = async (req, res, next) => {
         // Log error message
         console.log(err);
 
+        if (req.file) deleteTemp(req.file, unlink);
+
         if (err.code === "LIMIT_UNEXPECTED_FILE") {
             return res.status(500).send({ message: "Too many files to upload." });
         }
     }
 };
 
-exports.imagesCollectionDestroy = (req, res, next) => {
-    // Get removed tweet id
-    var id = req.params.id;
-    // Remove tweet
-    // removeImage(id)
-    // .then(succeeded => {
-    //   if (succeeded) {
-    //     res.redirect('/images');
-    //   } else {
-    //     res.redirect('back', { title: 'Upload Images', authorized: true, notice: 'There was an error.' });
-    //   }
-    // })
-    // .catch((err) => {
-    //   // Log error message
-    //   console.log(err);
-    //   // Return error 
-    //   res.send({ message: err.message });
-    // });
+exports.imagesCollectionDestroy = async (req, res, next) => {
+    // Get removed collection id
+    var collection_id = req.body.id;
+
+    try {
+        // Get live data
+        let result = await fetcher(feedURL);
+        // Find collection
+        let collection = result.resources.collection.find(item => item.$.id == collection_id);
+
+        if (collection.image !== undefined) {
+            // Delete every image on collection
+            for (const image of collection.image) {
+                const key = image.$.title;
+                await removeImage(key);
+            }
+        }
+        // Exclude collection
+        result.resources.collection = result.resources.collection.filter(item => item.$.id != collection_id);
+        // Publish feed update
+        let feedResponse = await s3.submitS3File({
+            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Key: resourceKey,
+            Body: xml.jsonToXML(result),
+            ACL: 'public-read'
+        });
+
+        res.redirect('/images');
+    } catch (err) {
+        // Log error message
+        console.log(err);
+        // Return error 
+        res.status(500).send({ message: err.message });
+    }
 };
 
-exports.imagesImageDestroy = (req, res, next) => {
-    // Get removed tweet id
-    var id = req.params.id;
-    // Remove tweet
-    // removeImage(id)
-    // .then(succeeded => {
-    //   if (succeeded) {
-    //     res.redirect('/images');
-    //   } else {
-    //     res.redirect('back', { title: 'Upload Images', authorized: true, notice: 'There was an error.' });
-    //   }
-    // })
-    // .catch((err) => {
-    //   // Log error message
-    //   console.log(err);
-    //   // Return error 
-    //   res.send({ message: err.message });
-    // });
+exports.imagesImageDestroy = async (req, res, next) => {
+    // Get removed image id
+    var id = req.body.id;
+    // Get removed image collection id
+    var collection_id = req.body.collection_id;
+    // Get removed image key
+    var key = req.body.key;
+
+    try {
+        let response = await removeImage(key);
+
+        // Get live data
+        let result = await fetcher(feedURL);
+        // Filter item
+        let updatedResult = updateCollection(result, collection_id, (element) => {
+            element.image = element.image.filter(item => item.$.id !== id);
+            
+            return element;
+        });
+        // Publish feed update
+        let feedResponse = await s3.submitS3File({
+            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Key: resourceKey,
+            Body: xml.jsonToXML(updatedResult),
+            ACL: 'public-read'
+        });
+
+        res.redirect('/images');
+    } catch (err) {
+        // Log error message
+        console.log(err);
+        // Return error 
+        res.status(500).send({ message: err.message });
+    }
 };
 
 var parseImages = (result) => {
-    return result.resources.collection.map(item => new Collection(item));
+    return result.resources.collection !== undefined ? result.resources.collection.map(item => new Collection(item)).reverse() : [];
 }
 
-var removeImage = (id) => {
-
+var removeImage = async (key) => {
+    return await s3.deleteS3File(process.env.AWS_S3_ASSETS_BUCKET, 'posts/' + key);
 }
 
 var updateCollection = (result, id, updateCallback) => {
@@ -237,7 +294,7 @@ var uploadImage = async (file) => {
         Key: file.filename,
         Body: fileStream,
         ACL: 'public-read'
-    })
+    });
 }
 
 var deleteTemp = async (file, unlinker) => {

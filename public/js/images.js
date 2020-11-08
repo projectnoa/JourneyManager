@@ -30,9 +30,26 @@ function imagesSetup() {
             resizeMimeType: 'image/jpeg',
             acceptedFiles: 'image/*',
             enctype: "multipart/form-data"
+        }).on("sending", (file, xhr, formData) => {
+            // Will send the filesize along with the file as POST data.
+            formData.append("filesize", file.size);
+
+            // Display loading screen
+            displayLoading(true);
         }).on("complete", (file, event) => {
+            // Display loading screen
+            displayLoading(false);
+
             window.location.href = '/images'
         })
+    });
+    // Form submit
+    let button = document.querySelector('[data-behavior~="submit"]');
+    button.addEventListener('click', (event) => {
+        let target = event.target;
+        let form = target.parentElement.parentElement.querySelector('form');
+
+        form.submit();
     });
 }
 
