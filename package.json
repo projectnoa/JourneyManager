@@ -4,6 +4,7 @@
   "description": "A Journey for Wisdom manager platform",
   "main": "index.js",
   "scripts": {
+    "start": "node ./start.js",
     "dev": "nodemon ./start.js"
   },
   "keywords": [],
