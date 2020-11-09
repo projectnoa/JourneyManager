@@ -59,7 +59,7 @@ exports.tweetsCreate = async (req, res, next) => {
     result.rss.channel[0].item.push(tweet);
     // Submit to S3
     let succeeded = await s3.submitS3File({
-      Bucket: process.env.AWS_S3_RSS_BUCKET, 
+      Bucket: process.env.JM_AWS_S3_RSS_BUCKET, 
       Key: resourceKey,
       Body: xml.jsonToXML(result)
     });
@@ -88,7 +88,7 @@ exports.tweetsDestroy = async (req, res, next) => {
     result.rss.channel[0].item = items.filter(item => item.id[0] !== id);
     // Submit to S3
     let succeeded = await s3.submitS3File({
-      Bucket: process.env.AWS_S3_RSS_BUCKET, 
+      Bucket: process.env.JM_AWS_S3_RSS_BUCKET, 
       Key: resourceKey,
       Body: xml.jsonToXML(result)
     });

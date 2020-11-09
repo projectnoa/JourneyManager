@@ -71,8 +71,8 @@ exports.podcastsCreate = async (req, res, next) => {
         console.log(' -- Backing up podcast feed.');
 
         let backupResponse = await s3.backupFile({
-            Bucket: process.env.AWS_S3_RSS_BUCKET + '/backup', 
-            CopySource: process.env.AWS_S3_RSS_BUCKET + '/' + resourceKey, 
+            Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup', 
+            CopySource: process.env.JM_AWS_S3_RSS_BUCKET + '/' + resourceKey, 
             Key: resourceKey.split('.').join('-' + Date.now() + '.')
         });
 
@@ -86,7 +86,7 @@ exports.podcastsCreate = async (req, res, next) => {
         });
         // Submit to S3
         let uploadResponse = await s3.submitS3File({
-            Bucket: process.env.AWS_S3_FILE_BUCKET + '/' + req.body.season, 
+            Bucket: process.env.JM_AWS_S3_FILE_BUCKET + '/' + req.body.season, 
             Key: req.file.filename,
             Body: fileStream
         });
@@ -144,7 +144,7 @@ exports.podcastsCreate = async (req, res, next) => {
         let episodeCount = result.rss.channel[0].item.length;
         // Publish feed update
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.AWS_S3_RSS_BUCKET, 
+            Bucket: process.env.JM_AWS_S3_RSS_BUCKET, 
             Key: resourceKey,
             Body: xml.jsonToXML(result)
         });

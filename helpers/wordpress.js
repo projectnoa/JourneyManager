@@ -10,7 +10,7 @@ var WPAPI = require('wpapi');
  * Variables 
  */
 
-var wp = new WPAPI({ endpoint: process.env.WP_ENDPOINT + '/wp-json' });
+var wp = new WPAPI({ endpoint: process.env.JM_WP_ENDPOINT + '/wp-json' });
 wp.podcasts = wp.registerRoute( 'wp/v2', 'podcast/(?P<id>)', {
     // Listing any of these parameters will assign the built-in
     // chaining method that handles the parameter:

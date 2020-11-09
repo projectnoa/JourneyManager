@@ -20,9 +20,9 @@ passport.deserializeUser(function(obj, cb) {
 });
 
 passport.use(new passportStrategy({
-    clientID: process.env.WP_AUTH_ID,
-    clientSecret: process.env.WP_AUTH_SEC,
-    callbackURL: process.env.DOMAIN + '/auth/wordpress/callback',
+    clientID: process.env.JM_WP_AUTH_ID,
+    clientSecret: process.env.JM_WP_AUTH_SEC,
+    callbackURL: process.env.JM_DOMAIN + '/auth/wordpress/callback',
     scope: ['profile'],
     passReqToCallback: true
   },

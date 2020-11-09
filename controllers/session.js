@@ -13,7 +13,7 @@ const axios = require('axios');
 exports.validateSession = (req, res, next) => {
     axios({
         method: 'post',
-        url: process.env.WP_ENDPOINT + '/oauth/introspection/',
+        url: process.env.JM_WP_ENDPOINT + '/oauth/introspection/',
         data: { },
         headers: {
           Authorization: 'Bearer ' + req.session.accessToken

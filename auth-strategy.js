@@ -41,9 +41,9 @@ var util = require('util')
  */
 function Strategy(options, verify) {
   options = options || {};
-  options.authorizationURL = options.authorizationURL || process.env.WP_ENDPOINT + '/oauth/authorize/';
-  options.tokenURL = options.tokenURL || process.env.WP_ENDPOINT + '/oauth/token';
-  this.profileUrl = options.profileUrl || process.env.WP_ENDPOINT + '/wp-json/wp/v2/users/me';
+  options.authorizationURL = options.authorizationURL || process.env.JM_WP_ENDPOINT + '/oauth/authorize/';
+  options.tokenURL = options.tokenURL || process.env.JM_WP_ENDPOINT + '/oauth/token';
+  this.profileUrl = options.profileUrl || process.env.JM_WP_ENDPOINT + '/wp-json/wp/v2/users/me';
 
   OAuth2Strategy.call(this, options, verify);
   this.name = 'wordpress';

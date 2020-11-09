@@ -31,7 +31,7 @@ cookieExpirationDate.setDate(cookieExpirationDate.getDate() + cookieExpirationDa
 app.use(session({
     resave: true,
     saveUninitialized: true,
-    secret: process.env.COOKIE_SECRET,
+    secret: process.env.JM_COOKIE_SECRET,
     cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week,
         secure: false,
@@ -39,7 +39,7 @@ app.use(session({
 	    expires: cookieExpirationDate // use expires instead of maxAge
     }
   }));
-app.use(cookieParser(process.env.COOKIE_SECRET));
+app.use(cookieParser(process.env.JM_COOKIE_SECRET));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(passport.initialize());

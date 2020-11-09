@@ -13,8 +13,8 @@ AWS.config.update({region: 'us-west-2'});
  */
 
 var s3 = new AWS.S3({ 
-    accessKeyId: process.env.AWS_S3_ID, 
-    secretAccessKey: process.env.AWS_S3_SEC 
+    accessKeyId: process.env.JM_AWS_S3_ID, 
+    secretAccessKey: process.env.JM_AWS_S3_SEC 
 });
 
 /**

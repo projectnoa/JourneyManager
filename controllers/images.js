@@ -63,7 +63,7 @@ exports.imagesCreateCollection = async (req, res, next) => {
 
         // Publish feed update
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
             Body: xml.jsonToXML(result),
             ACL: 'public-read'
@@ -122,7 +122,7 @@ exports.imagesCreateImage = async (req, res, next) => {
 
         // Publish feed update
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
             Body: xml.jsonToXML(updatedResult),
             ACL: 'public-read'
@@ -210,7 +210,7 @@ exports.imagesCollectionDestroy = async (req, res, next) => {
         result.resources.collection = result.resources.collection.filter(item => item.$.id != collection_id);
         // Publish feed update
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
             Body: xml.jsonToXML(result),
             ACL: 'public-read'
@@ -246,7 +246,7 @@ exports.imagesImageDestroy = async (req, res, next) => {
         });
         // Publish feed update
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
             Body: xml.jsonToXML(updatedResult),
             ACL: 'public-read'
@@ -266,7 +266,7 @@ var parseImages = (result) => {
 }
 
 var removeImage = async (key) => {
-    return await s3.deleteS3File(process.env.AWS_S3_ASSETS_BUCKET, 'posts/' + key);
+    return await s3.deleteS3File(process.env.JM_AWS_S3_ASSETS_BUCKET, 'posts/' + key);
 }
 
 var updateCollection = (result, id, updateCallback) => {
@@ -290,7 +290,7 @@ var uploadImage = async (file) => {
     });
     // Submit to S3
     return await s3.submitS3File({
-        Bucket: process.env.AWS_S3_ASSETS_BUCKET + '/posts', 
+        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
         Key: file.filename,
         Body: fileStream,
         ACL: 'public-read'
