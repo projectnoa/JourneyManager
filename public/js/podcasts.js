@@ -7,11 +7,16 @@ function newPodcastSetup() {
     // Set datepicker 
     let element = document.querySelector('[data-behavior~="datetime-picker"]');
     
+    var date = new Date();
+    date.setHours(09);
+    date.setMinutes(00);
+    date.setSeconds(00);
+
     $(element).datetimepicker({
         locale: 'en',
         format: 'M/D/YYYY hh:mm a',
-        minDate: new Date(),
-        defaultDate: new Date(),
+        minDate: date,
+        defaultDate: date,
         sideBySide: true,
         showTodayButton: true,
         showClose: true,

@@ -98,12 +98,19 @@ exports.podcastsCreate = async (req, res, next) => {
         let duration = await getAudioDurationInSeconds(req.file.path);
 
         console.log(' -- Publishing podcast feed.');
+
+        // Format Dates
+        let pdtDateString = new Date(req.body.pubDate).toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+        let gmtDateString = new Date(req.body.pubDate).toLocaleString("en-US", { timeZone: "GMT" });
+        let localDateString = new Date(req.body.pubDate);
         // Set properties
         let title = helpers.sanitize(req.body.title);
         let description = helpers.sanitize(req.body.description);
         let keywords = helpers.sanitize(req.body.keywords);
         let tags = keywords.split(',').map(tag => tag.trim());
-        let pubDate = moment(req.body.pubDate);
+        let pdtPubDate = moment(new Date(pdtDateString));
+        let gmtPubDate = moment(new Date(gmtDateString));
+        let localPubDate = moment(new Date(localDateString));
         let season = req.body.season;
         let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
         let postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
@@ -115,7 +122,7 @@ exports.podcastsCreate = async (req, res, next) => {
             title: [title],
             'itunes:title': [title],
             'link': [postURL + postSlug],
-            pubdate: [pubDate.format('ddd, D MMM YYYY HH:mm:ss Z')],
+            'pubDate': [`${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`],
             description: [description], 
             'enclosure': {
                 $: {
@@ -135,7 +142,6 @@ exports.podcastsCreate = async (req, res, next) => {
             'itunes:keywords': [keywords], 
             'itunes:explicit': [explicit]
         };
-
         // Get live data
         let result = await fetcher(feedURL);
         // Append item
@@ -163,7 +169,7 @@ exports.podcastsCreate = async (req, res, next) => {
         console.log(' -- Publishing podcast post.');
 
         let size = req.file.size / 1000000
-        let futurePublish = pubDate.isAfter(moment());
+        let futurePublish = localPubDate.isAfter(moment());
         // Instantiate podcast post
         let podcastPost = {
             slug: postSlug,
@@ -176,7 +182,7 @@ exports.podcastsCreate = async (req, res, next) => {
             tags: tag_ids,
             meta: {
                 audio_file: s3URL,
-                date_recorded: pubDate.format("DD-MM-yyyy"),
+                date_recorded: localPubDate.format("DD-MM-yyyy"),
                 duration: lengthString,
                 episode_type: 'audio',
                 explicit: req.body.explicit,
@@ -189,7 +195,8 @@ exports.podcastsCreate = async (req, res, next) => {
         }
         // Check if is a future post
         if (futurePublish) {
-            podcastPost['date'] = pubDate.format();
+            podcastPost['date'] = localPubDate.format('YYYY-M-DTHH:mm:ss');
+            podcastPost['date_gmt'] = gmtPubDate.format('YYYY-M-DTHH:mm:ss');
         }
         // Create podcast post
         let succeeded = await wp.publishPodcast(podcastPost, req.session.accessToken);
