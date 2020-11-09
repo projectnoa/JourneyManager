@@ -42,17 +42,36 @@ function newPodcastSetup() {
       let target = event.target;
 
       if (target.files && target.files[0]) {
-          let reader = new FileReader();
+        // Display loading screen
+        displayLoading(true);
+
+        let reader = new FileReader();
           
-          reader.onload = (e) => {
-            let fileData = e.target.result;
-            let fileName = target.files[0].name;
+        reader.onload = (e) => {
+          let arrayBuffer = e.target.result;
+          let fileName = target.files[0].name;
 
-            target.setAttribute("data-title", fileName);
-          }
+          target.setAttribute("data-title", fileName);
 
-          reader.readAsDataURL(target.files[0]);
+          // Create an instance of AudioContext
+          var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+          // Asynchronously decode audio file data contained in an ArrayBuffer.
+          audioContext.decodeAudioData(arrayBuffer, (buffer) => {
+              // Obtain the duration in seconds of the audio file (with milliseconds as well, a float value)
+              let length = buffer.duration * 1000;
+              let duration = new Date(length).toISOString().substr(11 ,8);
+              
+              document.querySelector('input[type="hidden"][name="length"]').value = length;
+              document.querySelector('input[type="hidden"][name="duration"]').value = duration;
+
+              // Display loading screen
+              displayLoading(false);
+          });
         }
+
+        reader.readAsArrayBuffer(target.files[0]);
+      }
     });
     // Set form validation
     setPodcastFormValidationBehavior();

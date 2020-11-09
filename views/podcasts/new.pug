@@ -53,6 +53,8 @@ block layout-content
             div.form-group
                 label.sr-only(for='file') Podcast file
                 input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload', required=true)
+                input(type="hidden", name="length")
+                input(type="hidden", name="duration")
             br
             center
               input.btn.btn-md.btn-primary.px-4(type="submit", value="Publish")

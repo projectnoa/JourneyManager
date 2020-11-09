@@ -22,7 +22,6 @@
     "express": "^4.17.1",
     "express-session": "^1.17.1",
     "express-validator": "^6.6.1",
-    "get-audio-duration": "^2.0.3",
     "image-size": "^0.9.3",
     "moment": "^2.29.1",
     "moment-timezone": "^0.5.31",

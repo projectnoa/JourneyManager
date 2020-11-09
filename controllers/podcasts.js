@@ -8,8 +8,6 @@ const util = require('util');
 
 var fs = require('fs');
 
-const { getAudioDurationInSeconds } = require('get-audio-duration');
-
 var moment = require('moment');
 
 var Podcast = require('./../models/podcast');
@@ -93,10 +91,6 @@ exports.podcastsCreate = async (req, res, next) => {
             Body: fileStream
         });
 
-        console.log(' -- Getting audion duration.');
-
-        let duration = await getAudioDurationInSeconds(req.file.path);
-
         console.log(' -- Publishing podcast feed.');
 
         // Format Dates
@@ -114,8 +108,8 @@ exports.podcastsCreate = async (req, res, next) => {
         let season = req.body.season;
         let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
         let postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
-        let length = duration * 1000;
-        let lengthString = new Date(length).toISOString().substr(11, 8);
+        let length = req.body.length;
+        let duration = req.body.duration;
         let s3URL = uploadResponse.Location;
         // Create feed item
         let feedItem = {
@@ -132,7 +126,7 @@ exports.podcastsCreate = async (req, res, next) => {
                 }
             },
             guid: [s3URL],
-            'itunes:duration': lengthString,
+            'itunes:duration': duration,
             'itunes:summary': [description],
             'itunes:image': {
                 $: {
@@ -183,7 +177,7 @@ exports.podcastsCreate = async (req, res, next) => {
             meta: {
                 audio_file: s3URL,
                 date_recorded: localPubDate.format("DD-MM-yyyy"),
-                duration: lengthString,
+                duration: duration,
                 episode_type: 'audio',
                 explicit: req.body.explicit,
                 filesize: Math.trunc(size) + ' Mb',
