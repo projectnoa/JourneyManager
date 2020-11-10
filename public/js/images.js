@@ -18,7 +18,7 @@ function imagesSetup() {
             new Dropzone(dropzoneElement, { 
                 url: `/images/createImage`,
                 paramName: "file",
-                params: { collection_id: element.dataset.id },
+                params: { collection_id: dropzoneElement.dataset.id },
                 maxFilesize: 1, 
                 uploadMultiple: false,
                 parallelUploads: 1,
@@ -37,7 +37,7 @@ function imagesSetup() {
                 // Display loading screen
                 displayLoading(false);
 
-                window.location.href = '/images'
+                window.location.href = '/images';
             });
             // Mark as initialized
             dropzoneElement.dataset.initialized = true;
@@ -96,6 +96,7 @@ function newImagesSetup() {
             // Add load event
             reader.onload = e => {
                 let subTarget = e.target;
+                let fileName = target.files[0].name;
                 // Place cropper
                 previewElement().innerHTML = `<img data-behavior="cover-cropper" style="max-width: 100%;" src="${subTarget.result}">`;
                 // Load cropper
@@ -131,7 +132,7 @@ function newImagesSetup() {
                                         .toBlob((blob) => {
                                             // Create form data
                                             const formData = new FormData();
-                                            formData.append('file', blob, 'cover.jpeg');
+                                            formData.append('file', blob, fileName);
                                             // Make request
                                             axios.post(
                                                 '/images/process', 
@@ -145,7 +146,7 @@ function newImagesSetup() {
                                                 // Hide loading screen
                                                 displayLoading(false);
                                                 // Download data
-                                                download(response.data);
+                                                download(response.data, fileName.split('.').join('-min-cover.'), response.data.type);
                                             })
                                             .catch(err => {
                                                 // Hide loading screen

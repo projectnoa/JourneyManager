@@ -117,7 +117,7 @@ exports.imagesCreateImage = async (req, res) => {
 
         // Compressing image
         winston.info(' -- Compressing images.');
-        await Jimp.read(req.file.path);
+        let jimpImg = await Jimp.read(req.file.path);
         await jimpImg.quality(80);
         await jimpImg.writeAsync(req.file.path);
 
@@ -188,7 +188,7 @@ exports.imagesProcess = async (req, res) => {
 
         // Compressing image
         winston.info(' -- Compressing images.');
-        await Jimp.read(req.file.path);
+        let jimpImg = await Jimp.read(req.file.path);
         await jimpImg.quality(80);
         await jimpImg.writeAsync(req.file.path);
 
