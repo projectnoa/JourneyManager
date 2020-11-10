@@ -93,13 +93,21 @@ function newPodcastSetup() {
         .then(response => {
           // Hide loading screen 
           displayLoading(false);
-          // If message exists
-          if (isDefined(response.message)) {
-            // Display message
-            displayNotice(response.message);
-          } else if (isDefined(response.redirectTo)) {
-            // Redirect on success
-            window.location.href = response.redirectTo;
+
+          if (isDefined(response) && isDefined(response.data)) {
+            let message = response.data.message;
+            let redirectTo = response.data.redirectTo;
+  
+            // If message exists
+            if (isDefined(message)) {
+              // Display message
+              displayNotice(message);
+            } else if (isDefined(redirectTo)) {
+              // Redirect on success
+              window.location.href = redirectTo;
+            }
+          } else {
+            displayNotice('There was an error.');
           }
         })
         .catch(err => {
