@@ -48,12 +48,12 @@ function setDeleteBehavior() {
 
             displayConfirm(message, () => {
                 axios.post(action)
-                  .then(function (response) {
+                .then(response => {
                     console.log(response);
-                  })
-                  .catch(function (error) {
+                })
+                .catch(error => {
                     console.log(error);
-                  });
+                });
             });
         }, false)
     );

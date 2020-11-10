@@ -4,15 +4,15 @@ function podcastsSetup() {
 }
 
 function newPodcastSetup() {
-    // Set datepicker 
-    let element = document.querySelector('[data-behavior~="datetime-picker"]');
-    
+    // Get datepicker element
+    let datepickerElement = document.querySelector('[data-behavior~="datetime-picker"]');
+    // Initialize current date with time as 9 AM
     var date = new Date();
     date.setHours(09);
     date.setMinutes(00);
     date.setSeconds(00);
-
-    $(element).datetimepicker({
+    // Set datepicker behavior
+    $(datepickerElement).datetimepicker({
         locale: 'en',
         format: 'M/D/YYYY hh:mm a',
         minDate: date,
@@ -35,77 +35,78 @@ function newPodcastSetup() {
         },
         showClose: true
     });
-    // Set File upload 
-    element = document.querySelector('[data-behavior~="file-upload"]');
-
-    element.addEventListener('change', (event) => {
+    // Get File upload element
+    let fileElement = document.querySelector('[data-behavior~="file-upload"]');
+    // Add event listener
+    fileElement.addEventListener('change', event => {
       let target = event.target;
-
+      // If files exists
       if (target.files && target.files[0]) {
         // Display loading screen
         displayLoading(true);
-
+        // Initialize file reader 
         let reader = new FileReader();
-          
+        // Set load listener
         reader.onload = (e) => {
+          // Get data
           let arrayBuffer = e.target.result;
           let fileName = target.files[0].name;
-
+          // Set filename on view
           target.setAttribute("data-title", fileName);
-
           // Create an instance of AudioContext
           var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
           // Asynchronously decode audio file data contained in an ArrayBuffer.
           audioContext.decodeAudioData(arrayBuffer, (buffer) => {
               // Obtain the duration in seconds of the audio file (with milliseconds as well, a float value)
               let length = buffer.duration * 1000;
               let duration = new Date(length).toISOString().substr(11 ,8);
-              
+              // Set duration info
               document.querySelector('input[type="hidden"][name="length"]').value = length;
               document.querySelector('input[type="hidden"][name="duration"]').value = duration;
-
-              // Display loading screen
+              // Hide loading screen
               displayLoading(false);
           });
         }
-
+        // Start file reader as array buffer
         reader.readAsArrayBuffer(target.files[0]);
       }
     });
-    // Set form validation
-    setPodcastFormValidationBehavior();
-    // Set form submition
-    document.querySelector('form')
-    .addEventListener('submit', event => {
+    // Get form element
+    let formElement = document.querySelector('form');
+    // Add event listener
+    formElement.addEventListener('submit', event => {
       // Store reference to form to make later code easier to read
       const target = event.target;
-
-      var isValid = $(target).valid();
-
-      if (isValid) {
-        // Post data using the Fetch API
-        fetch(target.action, {
-          method: target.method,
-          body: new FormData(target)
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);
+      // If the form is valid
+      if ($(target).valid()) {
+        // Create form data
+        const formData = new FormData(target);
+        // Make request
+        axios.post(
+          target.action, 
+          formData, 
+          {
+              timeout: 300000,
+              responseType: 'json'
+          }
+        )
+        .then(response => {
           // Hide loading screen 
           displayLoading(false);
-          if (isDefined(data.message)) {
-            // Display error
-            displayNotice(data.message);
-          } else if (isDefined(data.redirectTo)) {
+          // If message exists
+          if (isDefined(response.message)) {
+            // Display message
+            displayNotice(response.message);
+          } else if (isDefined(response.redirectTo)) {
             // Redirect on success
-            window.location.href = data.redirectTo;
+            window.location.href = response.redirectTo;
           }
         })
         .catch(err => {
-          console.log(err);
           // Hide loading screen 
           displayLoading(false);
+          // Log error
+          console.log(err);
           // Display error
           displayNotice(err);
         });
@@ -115,4 +116,6 @@ function newPodcastSetup() {
         displayLoading(true);
       }
     });
+    // Set form validation
+    setPodcastFormValidationBehavior();
 }

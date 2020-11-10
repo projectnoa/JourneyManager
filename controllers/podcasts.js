@@ -12,12 +12,15 @@ var moment = require('moment');
 
 var Podcast = require('./../models/podcast');
 
-const helpers = require('./../helpers/helper');
 const fetcher = require('./../helpers/fetcher');
+const requestProcessor = require('./../helpers/audioUpload');
+
+const winston = require('./../helpers/winston');
+
+const helpers = require('./../helpers/helper');
 const s3 = require('./../helpers/s3');
 const xml = require('./../helpers/xml');
 const wp = require('./../helpers/wordpress');
-const upload = require('./../helpers/audioUpload');
 
 /**
  * Variables
@@ -33,65 +36,80 @@ const podcastImageURL = podcastURL + 'images/DTMG-profile-v3.jpeg';
  *  Methods
  */
 
-exports.podcastsIndex = async (req, res, next) => {
+exports.podcastsIndex = async (req, res) => {
     try {
+        // Get live feed
+        winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
 
+        // Render page
+        winston.info(' -- Rendering page.');
         res.render('./podcasts/index', { title: 'Podcasts', authorized: true, items: parsePodcast(result) });
     } catch (err) {
         // Log error message
-        console.log(err);
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Return error 
-        res.send({ message: err.message });
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 };
 
-exports.podcastsNew = (req, res, next) => {
+exports.podcastsNew = (req, res) => {
     res.render('./../views/podcasts/new', { title: 'New Podcast', authorized: true });
 };
 
-exports.podcastsCreate = async (req, res, next) => {
+exports.podcastsCreate = async (req, res) => {
     const unlink = util.promisify(fs.unlink);
     let fileDeleted = true;
     
     try {
-        // Process form data
-        await upload(req, res);
+        // Process request
+        winston.info(' -- Processing request.');
+        await requestProcessor(req, res);
+
         // Validate file upload
+        winston.info(' -- Validating request.');
         if (req.fileValidationError) {
             // Return error
-            return res.status(500).send({ message: req.fileValidationError });
+            return res.status(500).send({ message: `An error occured: ${req.fileValidationError}` });
         } else if (!req.file) {
             // Return error
-            return res.status(500).send({ message: 'Please select the mp3 file to upload' });
+            return res.status(500).send({ message: `An error occured: No file provided` });
         }
 
         fileDeleted = false;
 
-        console.log(' -- Backing up podcast feed.');
-
+        // Back up feed
+        winston.info(' -- Backing up podcast feed.');
         let backupResponse = await s3.backupFile({
             Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup', 
             CopySource: process.env.JM_AWS_S3_RSS_BUCKET + '/' + resourceKey, 
             Key: resourceKey.split('.').join('-' + Date.now() + '.')
         });
 
-        if (backupResponse.$response.httpResponse.statusCode !== 200) return res.status(500).send({ message: 'There was an error backing up the feed' });
+        // Validate backup response
+        winston.info(' -- Validating backup.');
+        if (backupResponse.$response.httpResponse.statusCode !== 200) {
+            return res.status(500).send({ message: 'There was an error backing up the feed' });
+        }
 
-        console.log(' -- Uploading podcast file.');
         // Create file stream 
+        winston.info(' -- Reading podcast file stream.');
         var fileStream = fs.createReadStream(req.file.path);
         fileStream.on('error', function(err) {
-            console.log('File Error', err);
+            winston.warn('File Error', err);
         });
-        // Submit to S3
+
+        // Upload file 
+        winston.info(' -- Uploading podcast file.');
         let uploadResponse = await s3.submitS3File({
             Bucket: process.env.JM_AWS_S3_FILE_BUCKET + '/' + req.body.season, 
             Key: req.file.filename,
-            Body: fileStream
+            Body: fileStream,
+            ACL: 'public-read'
         });
 
-        console.log(' -- Publishing podcast feed.');
+        // Validate form data
+        winston.info(' -- Parsing form data.');
 
         // Format Dates
         let pdtDateString = new Date(req.body.pubDate).toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
@@ -111,7 +129,9 @@ exports.podcastsCreate = async (req, res, next) => {
         let length = req.body.length;
         let duration = req.body.duration;
         let s3URL = uploadResponse.Location;
+
         // Create feed item
+        winston.info(' -- Creating feed item.');
         let feedItem = {
             title: [title],
             'itunes:title': [title],
@@ -136,34 +156,43 @@ exports.podcastsCreate = async (req, res, next) => {
             'itunes:keywords': [keywords], 
             'itunes:explicit': [explicit]
         };
-        // Get live data
+        
+        // Get live feed
+        winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
+
         // Append item
+        winston.info(' -- Appending item.');
         result.rss.channel[0].item.push(feedItem);
+
         // Get episode count
+        winston.info(' -- Getting episode count.');
         let episodeCount = result.rss.channel[0].item.length;
+        
         // Publish feed update
+        winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
             Bucket: process.env.JM_AWS_S3_RSS_BUCKET, 
             Key: resourceKey,
-            Body: xml.jsonToXML(result)
+            Body: xml.jsonToXML(result),
+            ACL: 'public-read'
         });
 
-        console.log(' -- Deleting temp file.');
-
         // Delete file
-        if (req.file) await unlink(req.file.path);
+        winston.info(' -- Deleting temp file.');
+        await unlink(req.file.path);
 
         fileDeleted = true;
 
-        console.log(' -- Publishing podcast tags');
-
+        // Publish podcast tags
+        winston.info(' -- Publishing podcast tags');
         let tag_ids = await createTags(tags, req.session.accessToken);
 
-        console.log(' -- Publishing podcast post.');
-
+        // Create podcast post
+        winston.info(' -- Creating podcast post');
         let size = req.file.size / 1000000
         let futurePublish = localPubDate.isAfter(moment());
+
         // Instantiate podcast post
         let podcastPost = {
             slug: postSlug,
@@ -187,30 +216,34 @@ exports.podcastsCreate = async (req, res, next) => {
                 itunes_title: title
             }
         }
+
         // Check if is a future post
         if (futurePublish) {
             podcastPost['date'] = localPubDate.format('YYYY-M-DTHH:mm:ss');
             podcastPost['date_gmt'] = gmtPubDate.format('YYYY-M-DTHH:mm:ss');
         }
-        // Create podcast post
+
+        // Publish podcast post
+        winston.info(' -- Publishing podcast post.');
         let succeeded = await wp.publishPodcast(podcastPost, req.session.accessToken);
+
         // Respond to response
         if (helpers.isDefined(succeeded)) {
-            console.log(' -- Success.');
-
+            // Respond
+            winston.info(' -- Success.');
             res.status(200).send({ redirectTo: '/podcasts' });
         } else {
-            console.log(' -- FAILURE.');
             // Return error 
+            winston.warn(' -- FAILURE.');
             res.status(500).send({ message: 'There was an error posting the podcast post.' });
         }
     } catch (err) {
         // Log error message
-        console.log(err);
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
-        if (fileDeleted === false) await unlink(req.file.path);
+        if (!fileDeleted) await unlink(req.file.path);
         // Return error 
-        res.status(500).send({ message: err.message });
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 };
 

@@ -9,18 +9,19 @@ const util = require('util');
 var fs = require('fs');
 const path = require("path");
 
-var moment = require('moment');
+const Jimp = require('jimp');
 
 var sizeOf = require('image-size');
 
 var Collection = require('./../models/collection');
 
-const helpers = require('./../helpers/helper');
 const fetcher = require('./../helpers/fetcher');
+const requestProcessor = require('./../helpers/imageUpload');
+
+const winston = require('./../helpers/winston');
+
 const s3 = require('./../helpers/s3');
 const xml = require('./../helpers/xml');
-const upload = require('./../helpers/imageUpload');
-const imageCompressor = require('./../helpers/imageCompressor');
 
 /**
  * Variables
@@ -33,35 +34,44 @@ const resourceKey = 'settings.xml';
  *  Methods
  */
 
-exports.imagesIndex = async (req, res, next) => {
+exports.imagesIndex = async (req, res) => {
     try {
+        // Get live feed
+        winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
 
+        // Render page
+        winston.info(' -- Rendering page.');
         res.render('./images/index', { title: 'Images', authorized: true, items: parseImages(result) });
     } catch (err) {
         // Log error message
-        console.log(err);
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Return error 
-        res.send({ message: err.message });
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 };
 
-exports.imagesNew = (req, res, next) => {
+exports.imagesNew = (req, res) => {
     res.render('./../views/images/new', { title: 'Upload Images', authorized: true });
 };
 
-exports.imagesCreateCollection = async (req, res, next) => {
+exports.imagesCreateCollection = async (req, res) => {
     try {
-        // Get live data
+        // Get live feed
+        winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
+
         // If no items then initialize
         if (result.resources.collection == undefined) {
             result.resources = { collection: [] };
         }
+        
         // Append item
+        winston.info(' -- Appending item.');
         result.resources.collection.push({ $: { title: req.body.title, id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
 
         // Publish feed update
+        winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
             Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
@@ -69,49 +79,71 @@ exports.imagesCreateCollection = async (req, res, next) => {
             ACL: 'public-read'
         });
 
+        // Respond
+        winston.info(' -- Success.');
         res.redirect('/images');
     } catch (err) {
         // Log error message
-        console.log(err);
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Return error 
-        res.status(500).send({ message: err.message });
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 }
 
-exports.imagesCreateImage = async (req, res, next) => {
+exports.imagesCreateImage = async (req, res) => {
     const unlink = util.promisify(fs.unlink);
-    let compressed_data = {};
+
+    let fileDeleted = true;
 
     try {
-        // Process form data
-        await upload(req, res);
-        // console.log(req.files);
+        // Process request
+        winston.info(' -- Processing request.');
+        await requestProcessor(req, res);
+
+        // Validate file upload
+        winston.info(' -- Validating request.');
+        if (req.fileValidationError) {
+            // Return error
+            return res.status(500).send({ message: `An error occured: ${req.fileValidationError}` });
+        } else if (!req.file) {
+            // Return error
+            return res.status(500).send({ message: `An error occured: No file provided` });
+        }
+
+        fileDeleted = false;
 
         // Get image collection id
         var collection_id = req.body.collection_id;
 
-        console.log(' -- Compressing images.');
+        // Compressing image
+        winston.info(' -- Compressing images.');
+        await Jimp.read(req.file.path);
+        await jimpImg.quality(80);
+        await jimpImg.writeAsync(req.file.path);
 
-        const { statistics, errors } = await imageCompressor();
+        const compressed_path = req.file.path;
+        const compressed_name = path.basename(req.file.path);
 
-        if (errors.length > 0) throw errors[0];
-
-        // Upload files 
-        console.log(' -- Uploading image files.');
-
-        compressed_data = statistics[0];
-        const compressed_path = path.join(`${__dirname}/../${compressed_data.path_out_new}`);
-        const compressed_name = path.basename(compressed_data.path_out_new);
+        // Upload file 
+        winston.info(' -- Uploading image file.');
         let response = await uploadImage({ filename: compressed_name, path: compressed_path });
 
-        var dimensions = sizeOf(compressed_data.path_out_new);
+        // Getting image dimentions 
+        winston.info(' -- Getting image dimentions.');
+        var dimensions = sizeOf(req.file.path);
 
         // Delete file
-        deleteTemp({ path: compressed_data.path_out_new }, unlink);
+        winston.info(' -- Deleting image files.');
+        deleteTemp(req.file, unlink);
 
-        // Get live data
+        fileDeleted = true;
+
+        // Get live feed
+        winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
+
         // Append item
+        winston.info(' -- Appending item.');
         let updatedResult = updateCollection(result, collection_id, (element) => {
             if (element.image == undefined) element.image = [];
 
@@ -121,6 +153,7 @@ exports.imagesCreateImage = async (req, res, next) => {
         });
 
         // Publish feed update
+        winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
             Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
@@ -128,77 +161,76 @@ exports.imagesCreateImage = async (req, res, next) => {
             ACL: 'public-read'
         });
 
-        // Delete file
-        console.log(' -- Deleting image files.');
-
-        deleteTemp(req.file, unlink);
         // Respond
-        console.log(' -- Success.');
+        winston.info(' -- Success.');
         res.status(200).send({ redirectTo: '/images' });
     } catch (err) {
         // Log error message
-        console.log(err);
-
-        if (err.code === "LIMIT_UNEXPECTED_FILE") {
-            return res.status(500).send({ message: "Too many files to upload." });
-        }
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
-        deleteTemp(req.file, unlink);
-        if (compressed_data.path_out_new) deleteTemp({ path: compressed_data.path_out_new }, unlink);
+        if (!fileDeleted) deleteTemp(req.file, unlink);
         // Return error 
-        res.status(500).send({ message: `Error when trying upload many files: ${err.message}` });
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 }
 
-exports.imagesProcess = async (req, res, next) => {
+exports.imagesProcess = async (req, res) => {
     const unlink = util.promisify(fs.unlink);
 
+    let fileDeleted = true;
+
     try {
-        // Process form data
-        await upload(req, res);
+        // Process request
+        winston.info(' -- Processing request.');
+        await requestProcessor(req, res);
 
-        console.log(' -- Compressing images.');
+        fileDeleted = false;
 
-        const { statistics, errors } = await imageCompressor();
+        // Compressing image
+        winston.info(' -- Compressing images.');
+        await Jimp.read(req.file.path);
+        await jimpImg.quality(80);
+        await jimpImg.writeAsync(req.file.path);
 
-        if (errors.length > 0) throw errors[0];
+        const filePath = req.file.path;
+        const filename = path.basename(req.file.path);
 
-        const compressed_data = statistics[0];
-        const filePath = compressed_data.path_out_new;
-        const filename = path.basename(compressed_data.path_out_new);
+        fileDeleted = true;
 
-        // Delete file
-        deleteTemp(req.file, unlink);
-
+        // Returning image
+        winston.info(' -- Returning images.');
         res.download(filePath, filename, (err) => {
             if (err) {
-              console.log(err); // Check error if you want
+                winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
             }
           
-            fs.unlinkSync(filePath); // If you don't need callback
+            fs.unlinkSync(filePath);
         });
     } catch (err) {
         // Log error message
-        console.log(err);
-
-        if (req.file) deleteTemp(req.file, unlink);
-
-        if (err.code === "LIMIT_UNEXPECTED_FILE") {
-            return res.status(500).send({ message: "Too many files to upload." });
-        }
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Delete file
+        if (!fileDeleted) deleteTemp(req.file, unlink);
+        // Return error 
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 };
 
-exports.imagesCollectionDestroy = async (req, res, next) => {
+exports.imagesCollectionDestroy = async (req, res) => {
     // Get removed collection id
     var collection_id = req.body.id;
 
     try {
-        // Get live data
+        // Get live feed
+        winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
+
         // Find collection
+        winston.info(' -- Finding collection.');
         let collection = result.resources.collection.find(item => item.$.id == collection_id);
 
+        // Delete every image on collection
+        winston.info(' -- Deleting images in collection.');
         if (collection.image !== undefined) {
             // Delete every image on collection
             for (const image of collection.image) {
@@ -206,9 +238,13 @@ exports.imagesCollectionDestroy = async (req, res, next) => {
                 await removeImage(key);
             }
         }
+
         // Exclude collection
+        winston.info(' -- Removing collection.');
         result.resources.collection = result.resources.collection.filter(item => item.$.id != collection_id);
+
         // Publish feed update
+        winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
             Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
@@ -216,16 +252,18 @@ exports.imagesCollectionDestroy = async (req, res, next) => {
             ACL: 'public-read'
         });
 
+        // Respond
+        winston.info(' -- Success.');
         res.redirect('/images');
     } catch (err) {
         // Log error message
-        console.log(err);
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Return error 
-        res.status(500).send({ message: err.message });
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 };
 
-exports.imagesImageDestroy = async (req, res, next) => {
+exports.imagesImageDestroy = async (req, res) => {
     // Get removed image id
     var id = req.body.id;
     // Get removed image collection id
@@ -234,17 +272,24 @@ exports.imagesImageDestroy = async (req, res, next) => {
     var key = req.body.key;
 
     try {
+        // Remove image from S3
+        winston.info(' -- Deleting image file.');
         let response = await removeImage(key);
 
-        // Get live data
+        // Get live feed
+        winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
+
         // Filter item
+        winston.info(' -- Filtering image feed.');
         let updatedResult = updateCollection(result, collection_id, (element) => {
             element.image = element.image.filter(item => item.$.id !== id);
             
             return element;
         });
+
         // Publish feed update
+        winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
             Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
             Key: resourceKey,
@@ -252,12 +297,14 @@ exports.imagesImageDestroy = async (req, res, next) => {
             ACL: 'public-read'
         });
 
+        // Respond
+        winston.info(' -- Success.');
         res.redirect('/images');
     } catch (err) {
         // Log error message
-        console.log(err);
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Return error 
-        res.status(500).send({ message: err.message });
+        res.status(500).send({ message: `An error occured: ${err.message}` });
     }
 };
 
@@ -286,7 +333,7 @@ var uploadImage = async (file) => {
     // Create file stream 
     var fileStream = fs.createReadStream(file.path);
     fileStream.on('error', function(err) {
-        console.log('File Error', err);
+        winston.info('File Error', err);
     });
     // Submit to S3
     return await s3.submitS3File({

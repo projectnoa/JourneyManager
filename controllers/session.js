@@ -24,11 +24,7 @@ exports.validateSession = (req, res, next) => {
       })
       .catch(error => {
         console.log(error);
-    
-        // req.logout();
-        // req.session.destroy(function (err) {
-        //   res.redirect('/');
-        // });
+        
         req.session.returnTo = req.originalUrl;
         res.redirect('/auth/wordpress');
     });

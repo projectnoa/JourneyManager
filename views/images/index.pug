@@ -25,7 +25,7 @@ block layout-content
           button.btn.btn-primary(data-dismiss='modal', data-behavior='submit') OK
           button.btn.btn-secondary(data-dismiss='modal') Cancel
 
-  h1.mt-5.text-white.text-center Post Images
+  h1.mt-5.text-white.text-center Posts Images
   br
 
   div.row.no-gutters
@@ -54,7 +54,7 @@ block layout-content
           div.card-columns
             each image in item.images
               div.card
-                img.card-img-top(src=image.url, alt=image.title)
+                img.card-img-top(data-src=image.url, alt=image.title)
                 div.card-body
                   div.card-text
                     small.text-muted= image.url

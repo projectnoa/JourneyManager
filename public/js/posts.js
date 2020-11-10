@@ -11,32 +11,36 @@ function newPostSetup() {
     .addEventListener('submit', event => {
       // Store reference to form to make later code easier to read
       const target = event.target;
-
-      var isValid = $(target).valid();
-
-      if (isValid) {
-        // Post data using the Fetch API
-        fetch(target.action, {
-          method: target.method,
-          body: new FormData(target)
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data);
+      // If the form is valid
+      if ($(target).valid()) {
+        // Create form data
+        const formData = new FormData(target);
+        // Make request
+        axios.post(
+          target.action, 
+          formData, 
+          {
+              timeout: 300000,
+              responseType: 'json'
+          }
+        )
+        .then(response => {
           // Hide loading screen 
           displayLoading(false);
-          if (isDefined(data.message)) {
-            // Display error
-            displayNotice(data.message);
-          } else if (isDefined(data.redirectTo)) {
+          // If message exists
+          if (isDefined(response.message)) {
+            // Display message
+            displayNotice(response.message);
+          } else if (isDefined(response.redirectTo)) {
             // Redirect on success
-            window.location.href = data.redirectTo;
+            window.location.href = response.redirectTo;
           }
         })
         .catch(err => {
-          console.log(err);
           // Hide loading screen 
           displayLoading(false);
+          // Log error
+          console.log(err);
           // Display error
           displayNotice(err);
         });
