@@ -47,8 +47,10 @@ exports.postsIndex = async (req, res) => {
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-        // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
+        // Return error
+        res.redirect('back', { title: 'Posts', authorized: true });
     }
 };
 
@@ -95,19 +97,25 @@ exports.postsCreate = async (req, res) => {
 
         // Respond to response
         if (helpers.isDefined(succeeded)) {
+            // Set notice
+            helpers.setNotice(res, 'The post draft has been created.');
             // Respond
             winston.info(' -- Success.');
             res.status(200).send({ redirectTo: '/posts' });
         } else {
+            // Set notice
+            helpers.setNotice(res, 'There was an error creating the post draft.');
             // Return error 
             winston.warn(' -- FAILURE.');
-            res.status(500).send({ message: 'There was an error creating the draft.' });
+            res.redirect('back', { title: 'New Post Draft', authorized: true });
         }
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-        // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
+        // Return error
+        res.redirect('back', { title: 'New Post Draft', authorized: true });
     }
 };
 

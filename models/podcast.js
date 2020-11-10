@@ -2,7 +2,7 @@
 var dateFormat = require('dateformat');
 
 function Podcast(item) {
-    this.id = dateFormat(new Date(item.pubDate[0]), "yyyymmddhhmmss")
+    this.id = dateFormat(new Date(item.pubDate[0]), "yyyymmddHHMMss")
     this.title = item.title[0] || null;
     this.postLink = item.link[0] || null;
     this.pubDate = item.pubDate[0] || null;

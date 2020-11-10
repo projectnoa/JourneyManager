@@ -60,8 +60,10 @@ exports.tweetsIndex = async (req, res) => {
   } catch (err) {
       // Log error message
       winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+      // Set notice
+      helpers.setNotice(res, `An error occured: ${err.message}`);
       // Return error 
-      res.status(500).send({ message: `An error occured: ${err.message}` });
+      res.redirect('back', { title: 'Tweets', authorized: true });
   }
 };
 
@@ -83,7 +85,7 @@ exports.tweetsCreate = async (req, res) => {
       // Initiate tweet
       let date = new Date();
       tweet = { 
-        id: [dateFormat(date, "yyyymmddhhmmss")], 
+        id: [dateFormat(date, "yyyymmddHHMMss")], 
         date: [dateFormat(date, "yyyy-mm-dd")], 
         description: [helpers.sanitize(req.body.text)] 
       };
@@ -103,19 +105,25 @@ exports.tweetsCreate = async (req, res) => {
 
       // Respond to response
       if (helpers.isDefined(succeeded)) {
+        // Set notice
+        helpers.setNotice(res, 'Tweet saved!');
         // Respond
         winston.info(' -- Success.');
         res.redirect('/tweets');
       } else {
+        // Set notice
+        helpers.setNotice(res, 'There was an error creating the tweet.');
         // Return error 
         winston.warn(' -- FAILURE.');
-        res.redirect('back', { title: 'New Tweet', authorized: true, notice: 'There was an error.' });
+        res.redirect('back', { title: 'New Tweet', authorized: true });
       }
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        res.redirect('back', { title: 'New Tweet', authorized: true });
     }
 };
 
@@ -144,19 +152,25 @@ exports.tweetsDestroy = async (req, res) => {
 
     // Check status 
     if (helpers.isDefined(succeeded)) {
+      // Set notice
+      helpers.setNotice(res, 'Tweet deleted.');
       // Respond
       winston.info(' -- Success.');
       res.redirect('/tweets');
     } else {
+      // Set notice
+      helpers.setNotice(res, 'There was an error deleting the tweet.');
       // Return error 
       winston.warn(' -- FAILURE.');
-      res.redirect('back', { title: 'New Tweet', authorized: true, notice: 'There was an error.' });
+      res.redirect('back', { title: 'New Tweet', authorized: true });
     }
   } catch (err) {
       // Log error message
       winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+      // Set notice
+      helpers.setNotice(res, `An error occured: ${err.message}`);
       // Return error 
-      res.status(500).send({ message: `An error occured: ${err.message}` });
+      res.redirect('back', { title: 'New Tweet', authorized: true });
   }
 };
 

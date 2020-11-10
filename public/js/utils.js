@@ -12,12 +12,28 @@ function highlightHashtag(text) {
 
 function checkForNotice() {
     // Get element
-    let notice = document.querySelector('meta[name="notice"]');
+    let notice = getCookie('_JourneyManager_notice');
     // Check if any notice is set
-    if (isDefined(notice.content)) {
+    if (isDefined(notice) && notice.length > 0) {
         // Display notice
-        displayNotice(notice.content);
+        displayNotice(notice);
     }
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+      var c = ca[i];
+      while (c.charAt(0) == ' ') {
+        c = c.substring(1);
+      }
+      if (c.indexOf(name) == 0) {
+        return c.substring(name.length, c.length);
+      }
+    }
+    return "";
 }
 
 function setNoticeBehavior() {

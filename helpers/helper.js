@@ -14,6 +14,10 @@ exports.isDefined = (object) => {
     return (object != undefined && object != null);
 }
 
+exports.setNotice = (res, message) => {
+    res.cookie('_JourneyManager_notice', message, { maxAge: 1000 * 2, httpOnly: false, signed: false });
+}
+
 /**
  * Removes XML-invalid characters from a string.
  * @param {string} string - a string potentially containing XML-invalid characters, such as non-UTF8 characters, STX, EOX and so on.

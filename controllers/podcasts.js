@@ -69,8 +69,10 @@ exports.podcastsIndex = async (req, res) => {
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        res.redirect('back', { title: 'Podcasts', authorized: true });
     }
 };
 
@@ -90,11 +92,15 @@ exports.podcastsCreate = async (req, res) => {
         // Validate file upload
         winston.info(' -- Validating request.');
         if (req.fileValidationError) {
+            // Set notice
+            helpers.setNotice(res, `An error occured: ${req.fileValidationError}`);
             // Return error
-            return res.status(500).send({ message: `An error occured: ${req.fileValidationError}` });
+            return res.redirect('back', { title: 'New Podcast', authorized: true });
         } else if (!req.file) {
+            // Set notice
+            helpers.setNotice(res, 'An error occured: No file provided');
             // Return error
-            return res.status(500).send({ message: `An error occured: No file provided` });
+            return res.redirect('back', { title: 'New Podcast', authorized: true });
         }
 
         fileDeleted = false;
@@ -110,7 +116,10 @@ exports.podcastsCreate = async (req, res) => {
         // Validate backup response
         winston.info(' -- Validating backup.');
         if (backupResponse.$response.httpResponse.statusCode !== 200) {
-            return res.status(500).send({ message: 'There was an error backing up the feed' });
+            // Set notice
+            helpers.setNotice(res, 'There was an error backing up the feed');
+            // Return error
+            return res.redirect('back', { title: 'New Podcast', authorized: true });
         }
 
         // Create file stream 
@@ -250,21 +259,27 @@ exports.podcastsCreate = async (req, res) => {
 
         // Respond to response
         if (helpers.isDefined(succeeded)) {
+            // Set notice
+            helpers.setNotice(res, 'Podcast episode posted!');
             // Respond
             winston.info(' -- Success.');
             res.status(200).send({ redirectTo: '/podcasts' });
         } else {
+            // Set notice
+            helpers.setNotice(res, 'There was an error posting the podcast episode.');
             // Return error 
             winston.warn(' -- FAILURE.');
-            res.status(500).send({ message: 'There was an error posting the podcast post.' });
+            res.redirect('back', { title: 'New Podcast', authorized: true });
         }
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
         if (!fileDeleted) await unlink(req.file.path);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        res.redirect('back', { title: 'New Podcast', authorized: true });
     }
 };
 

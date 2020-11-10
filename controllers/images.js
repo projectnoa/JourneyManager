@@ -67,8 +67,10 @@ exports.imagesIndex = async (req, res) => {
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        res.redirect('back', { title: 'Images', authorized: true });
     }
 };
 
@@ -100,14 +102,19 @@ exports.imagesCreateCollection = async (req, res) => {
             ACL: 'public-read'
         });
 
+        // Set notice
+        helpers.setNotice(res, 'Collection created!');
+
         // Respond
         winston.info(' -- Success.');
         res.redirect('/images');
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        res.redirect('back', { title: 'Upload Images', authorized: true });
     }
 }
 
@@ -124,11 +131,15 @@ exports.imagesCreateImage = async (req, res) => {
         // Validate file upload
         winston.info(' -- Validating request.');
         if (req.fileValidationError) {
+            // Set notice
+            helpers.setNotice(res, `An error occured: ${req.fileValidationError}`);
             // Return error
-            return res.status(500).send({ message: `An error occured: ${req.fileValidationError}` });
+            return res.redirect('back', { title: 'Images', authorized: true });
         } else if (!req.file) {
+            // Set notice
+            helpers.setNotice(res, 'An error occured: No file provided');
             // Return error
-            return res.status(500).send({ message: `An error occured: No file provided` });
+            return res.redirect('back', { title: 'Images', authorized: true });
         }
 
         fileDeleted = false;
@@ -182,6 +193,9 @@ exports.imagesCreateImage = async (req, res) => {
             ACL: 'public-read'
         });
 
+        // Set notice
+        helpers.setNotice(res, 'Image saved!');
+
         // Respond
         winston.info(' -- Success.');
         res.status(200).send({ redirectTo: '/images' });
@@ -190,8 +204,10 @@ exports.imagesCreateImage = async (req, res) => {
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
         if (!fileDeleted) deleteTemp(req.file, unlink);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        res.redirect('back', { title: 'Upload Images', authorized: true });
     }
 }
 
@@ -222,7 +238,10 @@ exports.imagesProcess = async (req, res) => {
         winston.info(' -- Returning images.');
         res.download(filePath, filename, (err) => {
             if (err) {
+                // Log error message
                 winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+                // Set notice
+                helpers.setNotice(res, `An error occured: ${err.message}`);
             }
           
             fs.unlinkSync(filePath);
@@ -232,8 +251,10 @@ exports.imagesProcess = async (req, res) => {
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
         if (!fileDeleted) deleteTemp(req.file, unlink);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        res.redirect('back', { title: 'Upload Images', authorized: true });
     }
 };
 
@@ -273,14 +294,19 @@ exports.imagesCollectionDestroy = async (req, res) => {
             ACL: 'public-read'
         });
 
+        // Set notice
+        helpers.setNotice(res, 'Collection deleted!');
+
         // Respond
         winston.info(' -- Success.');
         res.redirect('/images');
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-        // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
+        // Return error
+        res.redirect('back', { title: 'Images', authorized: true });
     }
 };
 
@@ -318,14 +344,19 @@ exports.imagesImageDestroy = async (req, res) => {
             ACL: 'public-read'
         });
 
+        // Set notice
+        helpers.setNotice(res, 'Image deleted!');
+
         // Respond
         winston.info(' -- Success.');
         res.redirect('/images');
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-        // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
+        // Return error
+        res.redirect('back', { title: 'Images', authorized: true });
     }
 };
 
