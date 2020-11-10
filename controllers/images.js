@@ -35,14 +35,35 @@ const resourceKey = 'settings.xml';
  */
 
 exports.imagesIndex = async (req, res) => {
+    let page = req.query.page;
+
+    if (page == undefined) page = 1;
+
     try {
         // Get live feed
         winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
 
+        // Parse posts
+        winston.info(' -- Parsing items.');
+        let items = parseImages(result);
+
+        let total = items.length;
+        let pages = Math.ceil(total / 5);
+
+        items = items.slice((page - 1) * 5, page * 5);
+
         // Render page
         winston.info(' -- Rendering page.');
-        res.render('./images/index', { title: 'Images', authorized: true, items: parseImages(result) });
+        res.render('./images/index', { 
+            title: 'Images', 
+            authorized: true, 
+            items: items, 
+            entity: 'images',
+            page: parseInt(page), 
+            total: total, 
+            pages: pages
+        });
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);

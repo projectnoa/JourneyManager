@@ -8,22 +8,26 @@ block head-content
 
 block layout-content
   h1.mt-5.text-white.text-center Tweets
-  br
 
   div.row.no-gutters
     div.col
       a.btn.btn-sm.text-white.float-right(href='/tweets/new')
         i.fas.fa-plus.fa-2x
-  each item in items
-    div.row
-      div.card.w-100.p-3
-        div.card-text
-          div.row.no-gutters
-            div.col !{item.description}
-            div.col-auto
-              form(action=`/tweets/${item.id}/delete`, method="post", data-id=`tweetDelete-${item.id}`)
-                input(type="hidden", name="id", value=item.id)
-              i.fas.fa-trash.text-danger.m-2.pt-1(style='cursor: pointer;', data-behavior='display-confirm', data-target=`tweetDelete-${item.id}`, data-text='Are you sure you want to delete this tweet?')
-          div.row.no-gutters
-            div.col.text-right
-              small.text-muted #{item.date}
+  if items.length > 0
+    h6.text-white !{total} Tweets, page !{page}
+
+    each item in items
+      div.row
+        div.card.w-100.p-3
+          div.card-text
+            div.row.no-gutters
+              div.col !{item.description}
+              div.col-auto
+                form(action=`/tweets/${item.id}/delete`, method="post", data-id=`tweetDelete-${item.id}`)
+                  input(type="hidden", name="id", value=item.id)
+                i.fas.fa-trash.text-danger.m-2.pt-1(style='cursor: pointer;', data-behavior='display-confirm', data-target=`tweetDelete-${item.id}`, data-text='Are you sure you want to delete this tweet?')
+            div.row.no-gutters
+              div.col.text-right
+                small.text-muted #{item.date}
+    br
+    include ../pagination.pug

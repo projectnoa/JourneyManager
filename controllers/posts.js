@@ -20,18 +20,30 @@ const wp = require('./../helpers/wordpress');
  */
 
 exports.postsIndex = async (req, res) => {
+    let page = req.query.page;
+
+    if (page == undefined) page = 1;
+
     try {
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await wp.getPosts(req.session.accessToken)
+        let result = await wp.getPosts(req.session.accessToken, page)
 
         // Parse posts
         winston.info(' -- Parsing items.');
-        let posts = result.map(item => new Post(0, item.title.rendered, item.content.rendered));
+        let items = result.map(item => new Post(0, item.title.rendered, item.content.rendered));
 
         // Render page
         winston.info(' -- Rendering page.');
-        res.render('./posts/index', { title: 'Posts', authorized: true, items: posts });
+        res.render('./posts/index', { 
+            title: 'Posts', 
+            authorized: true, 
+            items: items,
+            entity: 'posts',
+            page: parseInt(page), 
+            total: parseInt(result._paging.total), 
+            pages: parseInt(result._paging.totalPages) 
+        });
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);

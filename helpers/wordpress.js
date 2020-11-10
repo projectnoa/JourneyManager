@@ -21,9 +21,13 @@ wp.podcasts = wp.registerRoute( 'wp/v2', 'podcast/(?P<id>)', {
  *  Methods
  */
 
-exports.getPosts = (token) => {
+exports.getPosts = (token, page=1) => {
+    if (page == undefined) page = 1;
+
     // Get all posts
     return wp.posts()
+    .perPage(5)
+    .page(page)
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .get()
 }

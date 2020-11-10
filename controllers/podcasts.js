@@ -37,14 +37,35 @@ const podcastImageURL = podcastURL + 'images/DTMG-profile-v3.jpeg';
  */
 
 exports.podcastsIndex = async (req, res) => {
+    let page = req.query.page;
+
+    if (page == undefined) page = 1;
+
     try {
         // Get live feed
         winston.info(' -- Getting live feed.');
         let result = await fetcher(feedURL);
 
+        // Parse posts
+        winston.info(' -- Parsing items.');
+        let items = parsePodcast(result);
+
+        let total = items.length;
+        let pages = Math.ceil(total / 5);
+
+        items = items.slice((page - 1) * 5, page * 5);
+
         // Render page
         winston.info(' -- Rendering page.');
-        res.render('./podcasts/index', { title: 'Podcasts', authorized: true, items: parsePodcast(result) });
+        res.render('./podcasts/index', { 
+            title: 'Podcasts', 
+            authorized: true, 
+            items: items, 
+            entity: 'podcasts',
+            page: parseInt(page), 
+            total: total, 
+            pages: pages
+        });
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);

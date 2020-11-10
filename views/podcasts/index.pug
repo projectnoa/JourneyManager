@@ -8,21 +8,25 @@ block head-content
 
 block layout-content
   h1.mt-5.text-white.text-center Podcasts
-  br
 
   div.row.no-gutters
     div.col
       a.btn.btn-sm.text-white.float-right(href='/podcasts/new')
         i.fas.fa-plus.fa-2x
-  each item in items
-    div.row
-      div.card.w-100.p-3
-        div.card-text
-          div.row.no-gutters
-            div.col 
-              h3 !{item.title}
-          div.row.no-gutters
-            div.col !{item.description}
-          div.row.no-gutters
-            div.col.text-right
-              small.text-muted #{item.pubDate}
+  if items.length > 0
+    h6.text-white !{total} Podcasts published, page !{page}
+
+    each item in items
+      div.row
+        div.card.w-100.p-3
+          div.card-text
+            div.row.no-gutters
+              div.col 
+                h3 !{item.title}
+            div.row.no-gutters
+              div.col !{item.description}
+            div.row.no-gutters
+              div.col.text-right
+                small.text-muted #{item.pubDate}
+    br
+    include ../pagination.pug

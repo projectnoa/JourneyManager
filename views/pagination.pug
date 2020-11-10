@@ -1,0 +1,43 @@
+
+nav(aria-label="Paging")
+    ul.pagination.justify-content-center
+        //- If there is only one page
+        if pages == 1
+        //- If there is more than one page
+        else
+            //- First page
+            if page == undefined || page == 1
+                li.page-item.disabled
+                    a.page-link(href=`/${entity}`) 1
+                li.page-item
+                    a.page-link(href=`/${entity}?page=2`) 2
+                if pages > 2
+                    i.page-item
+                        a.page-link(href=`/${entity}?page=3`) 3
+                li.page-item
+                    a.page-link(href=`/${entity}?page=2`) Next
+            //- Last page
+            else if page == pages
+                li.page-item
+                    a.page-link(href=`/${entity}?page=${page - 1}`, tabindex="-1") Previous
+                if page - 2 > 0
+                    li.page-item
+                        a.page-link(href=`/${entity}?page=${page - 2}`) !{page - 2}
+                li.page-item
+                    a.page-link(href=`/${entity}?page=${page - 1}`) !{page - 1}
+                li.page-item.disabled
+                    a.page-link(href=`/${entity}?page=${page}`) !{page}
+            //- Somewhere in between
+            else
+                li.page-item
+                    a.page-link(href=`/${entity}?page=${page - 1}`, tabindex="-1") Previous
+                if page - 1 > 0
+                    li.page-item
+                        a.page-link(href=`/${entity}?page=${page - 1}`) !{page - 1}
+                li.page-item.disabled
+                    a.page-link(href=`/${entity}?page=${page}`) !{page}
+                if page + 1 <= pages
+                    li.page-item
+                        a.page-link(href=`/${entity}?page=${page + 1}`) !{page + 1}
+                li.page-item
+                    a.page-link(href=`/${entity}?page=${page + 1}`) Next

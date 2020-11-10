@@ -28,20 +28,41 @@ const resourceKey = 'tweetbotFeed.xml';
  */
 
 exports.tweetsIndex = async (req, res) => {
-    try {
-      // Get live feed
-      winston.info(' -- Getting live feed.');
-      let result = await fetcher(feedURL);
+  let page = req.query.page;
 
-      // Render page
-      winston.info(' -- Rendering page.');
-      res.render('./tweets/index', { title: 'Tweets', authorized: true, items: parseTweets(result) });
-    } catch (err) {
-        // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-        // Return error 
-        res.status(500).send({ message: `An error occured: ${err.message}` });
-    }
+  if (page == undefined) page = 1;
+
+  try {
+    // Get live feed
+    winston.info(' -- Getting live feed.');
+    let result = await fetcher(feedURL);
+
+    // Parse posts
+    winston.info(' -- Parsing items.');
+    let items = parseTweets(result);
+
+    let total = items.length;
+    let pages = Math.ceil(total / 5);
+
+    items = items.slice((page - 1) * 5, page * 5);
+
+    // Render page
+    winston.info(' -- Rendering page.');
+    res.render('./tweets/index', { 
+      title: 'Tweets', 
+      authorized: true, 
+      items: items, 
+      entity: 'tweets',
+      page: parseInt(page), 
+      total: total, 
+      pages: pages
+    });
+  } catch (err) {
+      // Log error message
+      winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+      // Return error 
+      res.status(500).send({ message: `An error occured: ${err.message}` });
+  }
 };
 
 exports.tweetsNew = (req, res) => {
