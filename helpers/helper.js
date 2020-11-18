@@ -15,7 +15,7 @@ exports.isDefined = (object) => {
 }
 
 exports.setNotice = (res, message) => {
-    res.cookie('_JourneyManager_notice', message, { maxAge: 1000 * 2, httpOnly: false, signed: false });
+    res.cookie('_JourneyManager_notice', message, { maxAge: 1000 * 3, httpOnly: false, signed: false });
 }
 
 /**

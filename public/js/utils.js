@@ -136,5 +136,5 @@ function displayLoading(show) {
 }
 
 function isDefined(value) {
-    return (value !== undefined && value !== null && value.length > 0);
+    return (value !== undefined && value !== null);
 }

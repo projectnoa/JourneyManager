@@ -99,10 +99,10 @@ function newPodcastSetup() {
             let redirectTo = response.data.redirectTo;
   
             // If message exists
-            if (isDefined(message)) {
+            if (isDefined(message) && message.length > 0) {
               // Display message
               displayNotice(message);
-            } else if (isDefined(redirectTo)) {
+            } else if (isDefined(redirectTo) && redirectTo.length > 0) {
               // Redirect on success
               window.location.href = redirectTo;
             }
