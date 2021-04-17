@@ -50,7 +50,7 @@ exports.postsIndex = async (req, res) => {
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error
-        res.redirect('back', { title: 'Posts', authorized: true });
+        res.redirect('back', 500, { title: 'Posts', authorized: true });
     }
 };
 
@@ -107,7 +107,7 @@ exports.postsCreate = async (req, res) => {
             helpers.setNotice(res, 'There was an error creating the post draft.');
             // Return error 
             winston.warn(' -- FAILURE.');
-            res.redirect('back', { title: 'New Post Draft', authorized: true });
+            res.redirect('back', 500, { title: 'New Post Draft', authorized: true });
         }
     } catch (err) {
         // Log error message
@@ -115,7 +115,7 @@ exports.postsCreate = async (req, res) => {
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error
-        res.redirect('back', { title: 'New Post Draft', authorized: true });
+        res.redirect('back', 500, { title: 'New Post Draft', authorized: true });
     }
 };
 

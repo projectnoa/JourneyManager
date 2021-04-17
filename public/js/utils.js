@@ -39,9 +39,9 @@ function getCookie(cname) {
 function setNoticeBehavior() {
     // Get elements
     let elements = document.querySelectorAll('[data-behavior~="display-notice"]');
-    // Add event listeners 
-    elements.forEach(element => { 
-        element.addEventListener('click', (event) => { 
+    // Add event listeners
+    elements.forEach(element => {
+        element.addEventListener('click', (event) => {
             // Get element
             let target = event.target;
             // Get text
@@ -55,7 +55,7 @@ function setNoticeBehavior() {
 function setDeleteBehavior() {
     let elements = document.querySelectorAll('[data-behavior~="delete"]');
 
-    elements.forEach(element => 
+    elements.forEach(element =>
         element.addEventListener('click', (event) => {
             let target = event.target;
 
@@ -78,9 +78,9 @@ function setDeleteBehavior() {
 function setConfirmBehavior() {
     // Get elements
     let elements = document.querySelectorAll('[data-behavior~="display-confirm"]');
-    // Add event listeners 
-    elements.forEach(element => { 
-        element.addEventListener('click', (event) => { 
+    // Add event listeners
+    elements.forEach(element => {
+        element.addEventListener('click', (event) => {
             // Get element
             let target = event.target;
             // Get text
@@ -117,7 +117,7 @@ function displayConfirm(text, callback) {
     confirmAction.addEventListener('click', (event) => {
         // Get element
         let target = event.target;
-        // Run callback 
+        // Run callback
         callback(target);
     });
 }

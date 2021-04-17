@@ -1,6 +1,6 @@
 
 function postsSetup() {
-    
+
 }
 
 function newPostSetup() {
@@ -17,21 +17,21 @@ function newPostSetup() {
         const formData = new FormData(target);
         // Make request
         axios.post(
-          target.action, 
-          formData, 
+          target.action,
+          formData,
           {
               timeout: 300000,
               responseType: 'json'
           }
         )
         .then(response => {
-          // Hide loading screen 
+          // Hide loading screen
           displayLoading(false);
-          
+
           if (isDefined(response) && isDefined(response.data)) {
             let message = response.data.message;
             let redirectTo = response.data.redirectTo;
-  
+
             // If message exists
             if (isDefined(message) && message.length > 0) {
               // Display message
@@ -45,7 +45,7 @@ function newPostSetup() {
           }
         })
         .catch(err => {
-          // Hide loading screen 
+          // Hide loading screen
           displayLoading(false);
           // Log error
           console.log(err);

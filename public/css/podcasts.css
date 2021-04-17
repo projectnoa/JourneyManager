@@ -1,4 +1,12 @@
 
+.container em.hashtag {
+    font-weight: bolder;
+}
+
+.container em.url {
+    color: blue;
+}
+
 .container textarea {
     min-height: 200px;
 }

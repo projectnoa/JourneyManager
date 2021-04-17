@@ -17,7 +17,7 @@
   "dependencies": {
     "app-root-path": "^3.0.0",
     "aws-sdk": "^2.778.0",
-    "axios": "^0.21.0",
+    "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "browserify": "^17.0.0",
     "connect-ensure-login": "^0.1.1",
@@ -38,7 +38,7 @@
     "passport-custom": "^1.1.1",
     "passport-oauth": "^1.0.0",
     "pngquant-bin": "^6.0.0",
-    "pug": "^3.0.0",
+    "pug": "^3.0.2",
     "twitter-text": "^3.1.0",
     "winston": "^3.3.3",
     "wordpress-rest-api-oauth-2": "^0.1.1",

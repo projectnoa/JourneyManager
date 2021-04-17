@@ -63,7 +63,7 @@ exports.tweetsIndex = async (req, res) => {
       // Set notice
       helpers.setNotice(res, `An error occured: ${err.message}`);
       // Return error 
-      res.redirect('back', { title: 'Tweets', authorized: true });
+      res.redirect('back', 500, { title: 'Tweets', authorized: true });
   }
 };
 
@@ -115,7 +115,7 @@ exports.tweetsCreate = async (req, res) => {
         helpers.setNotice(res, 'There was an error creating the tweet.');
         // Return error 
         winston.warn(' -- FAILURE.');
-        res.redirect('back', { title: 'New Tweet', authorized: true });
+        res.redirect('back', 500, { title: 'New Tweet', authorized: true });
       }
     } catch (err) {
         // Log error message
@@ -123,7 +123,7 @@ exports.tweetsCreate = async (req, res) => {
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error 
-        res.redirect('back', { title: 'New Tweet', authorized: true });
+        res.redirect('back', 500, { title: 'New Tweet', authorized: true });
     }
 };
 
@@ -162,7 +162,7 @@ exports.tweetsDestroy = async (req, res) => {
       helpers.setNotice(res, 'There was an error deleting the tweet.');
       // Return error 
       winston.warn(' -- FAILURE.');
-      res.redirect('back', { title: 'New Tweet', authorized: true });
+      res.redirect('back', 500, { title: 'New Tweet', authorized: true });
     }
   } catch (err) {
       // Log error message
@@ -170,7 +170,7 @@ exports.tweetsDestroy = async (req, res) => {
       // Set notice
       helpers.setNotice(res, `An error occured: ${err.message}`);
       // Return error 
-      res.redirect('back', { title: 'New Tweet', authorized: true });
+      res.redirect('back', 500, { title: 'New Tweet', authorized: true });
   }
 };
 

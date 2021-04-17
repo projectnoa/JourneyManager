@@ -24,7 +24,7 @@ block layout-content
               div.col !{item.description}
               div.col-auto
                 form(action=`/tweets/${item.id}/delete`, method="post", data-id=`tweetDelete-${item.id}`)
-                  input(type="hidden", name="id", value=item.id)
+                  input(type="hidden", name="id", value=`${item.id}`)
                 i.fas.fa-trash.text-danger.m-2.pt-1(style='cursor: pointer;', data-behavior='display-confirm', data-target=`tweetDelete-${item.id}`, data-text='Are you sure you want to delete this tweet?')
             div.row.no-gutters
               div.col.text-right

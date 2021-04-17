@@ -28,7 +28,7 @@ exports.sanitize = (string, removeDiscouragedChars = true) => {
     // remove everything forbidden by XML 1.0 specifications, plus the unicode replacement character U+FFFD
     var regex = /((?:[\0-\x08\x0B\f\x0E-\x1F\uFFFD\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]))/g;
     string = string.replace(regex, "");
- 
+
     if (removeDiscouragedChars) {
         // remove everything not suggested by XML 1.0 specifications
         regex = new RegExp(
@@ -44,7 +44,7 @@ exports.sanitize = (string, removeDiscouragedChars = true) => {
     }
 
     string = string.replace(/\r/g, '');
- 
+
     return string;
 }
 
@@ -67,15 +67,15 @@ exports.formatPost = (text) => {
 }
 
 exports.podcastFooter = () => {
-    const spacer = '<div style="height:100px" aria-hidden="true" class="wp-block-spacer"></div>';
-    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewforum.php?f=11">join the discussion</a>!</h3>';
+    const spacer = '';
+    const discussion = '';
 
     return spacer + discussion;
 }
 
 exports.postFooter = () => {
-    const spacer = '<div style="height:100px" aria-hidden="true" class="wp-block-spacer"></div>';
-    const discussion = '<h3 class="has-text-align-center">Make sure to&nbsp;<a href="https://www.ajourneyforwisdom.com/community/viewforum.php?f=10">join the discussion</a>!</h3>';
+    const spacer = '';
+    const discussion = '';
 
     return spacer + discussion;
 }

@@ -42,6 +42,8 @@ router.post('/posts/create', sessionController.validateSession, postsController.
 router.get('/podcasts', sessionController.validateSession, podcastsController.podcastsIndex);
 router.get('/podcasts/new', sessionController.validateSession, podcastsController.podcastsNew);
 router.post('/podcasts/create', sessionController.validateSession, podcastsController.podcastsCreate);
+router.post('/podcasts/:id/edit', sessionController.validateSession, podcastsController.podcastsEdit);
+router.post('/podcasts/:id/update', sessionController.validateSession, podcastsController.podcastsUpdate);
 
 // Tweets
 router.get('/tweets', sessionController.validateSession, tweetsController.tweetsIndex);
@@ -54,7 +56,7 @@ router.get('/images', sessionController.validateSession, imagesController.images
 router.get('/images/new', sessionController.validateSession, imagesController.imagesNew);
 router.post('/images/create', sessionController.validateSession, imagesController.imagesCreateCollection);
 router.post('/images/createImage', sessionController.validateSession, imagesController.imagesCreateImage);
-router.post('/images/process', sessionController.validateSession, imagesController.imagesProcess); 
+router.post('/images/process', sessionController.validateSession, imagesController.imagesProcess);
 router.post('/images/:id/delete', sessionController.validateSession, imagesController.imagesCollectionDestroy);
 router.post('/images/:collection_id/image/:id/delete', sessionController.validateSession, imagesController.imagesImageDestroy);
 

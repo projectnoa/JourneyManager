@@ -3,7 +3,7 @@ doctype html
 html
   head
     meta(charset="utf-8")
-    
+
     link(rel="shortcut icon", href="/favicon.ico")
 
     meta(name="viewport", content="width=device-width, initial-scale=1, shrink-to-fit=no")
@@ -31,16 +31,16 @@ html
 
     title #{title} | A Journey for Wisdom
   body
-    //- Background 
+    //- Background
     div.background
       //- Navbar
       nav.navbar.navbar-expand-lg.fixed-top.navbar-light.bg-light
         //- Navbar brand
         a.navbar-brand.d-none.d-lg-block(href='/dashboard')
           img.logo(alt='logo', src='/img/AJourneyForWisdom-logo-long-min.png', height=50)
-        div.navbar-branding.text-white Journey's Manager
+        div.navbar-branding.text-black.text-small Ver. 1.2
         div.collapse.navbar-collapse(id='navbarNavDropdown')
-          //- If authorized 
+          //- If authorized
           if authorized
             //- Navbar items
             ul.navbar-nav.mt-2.mt-lg-0.ml-auto
@@ -56,14 +56,14 @@ html
       div.top-spacer
       //- Content container
       div.container.pb-3
-        //- Notice modal 
+        //- Notice modal
         div.modal.fade(id='notice', data-behavior='notice-modal', tabIndex='-1', role='dialog', aria-labelledby='noticeTitle', aria-hidden=true)
           div.modal-dialog.modal-dialog-centered(role='document')
             div.modal-content
               div.modal-body
               div.modal-footer
                 button.btn.btn-primary(data-dismiss='modal') OK
-        //- Confirm modal 
+        //- Confirm modal
         div.modal.fade(id='confirm', data-behavior='confirm-modal', tabIndex='-1', role='dialog', aria-labelledby='confirmTitle', aria-hidden=true)
           div.modal-dialog.modal-dialog-centered(role='document')
             div.modal-content

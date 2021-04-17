@@ -19,6 +19,7 @@ const fetcher = require('./../helpers/fetcher');
 const requestProcessor = require('./../helpers/imageUpload');
 
 const winston = require('./../helpers/winston');
+const helpers = require('./../helpers/helper');
 
 const s3 = require('./../helpers/s3');
 const xml = require('./../helpers/xml');
@@ -55,13 +56,13 @@ exports.imagesIndex = async (req, res) => {
 
         // Render page
         winston.info(' -- Rendering page.');
-        res.render('./images/index', { 
-            title: 'Images', 
-            authorized: true, 
-            items: items, 
+        res.render('./images/index', {
+            title: 'Images',
+            authorized: true,
+            items: items,
             entity: 'images',
-            page: parseInt(page), 
-            total: total, 
+            page: parseInt(page),
+            total: total,
             pages: pages
         });
     } catch (err) {
@@ -69,8 +70,8 @@ exports.imagesIndex = async (req, res) => {
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
-        // Return error 
-        res.redirect('back', { title: 'Images', authorized: true });
+        // Return error
+        res.redirect('back', 500, { title: 'Images', authorized: true });
     }
 };
 
@@ -88,7 +89,7 @@ exports.imagesCreateCollection = async (req, res) => {
         if (result.resources.collection == undefined) {
             result.resources = { collection: [] };
         }
-        
+
         // Append item
         winston.info(' -- Appending item.');
         result.resources.collection.push({ $: { title: req.body.title, id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
@@ -96,7 +97,7 @@ exports.imagesCreateCollection = async (req, res) => {
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
             Key: resourceKey,
             Body: xml.jsonToXML(result),
             ACL: 'public-read'
@@ -113,8 +114,8 @@ exports.imagesCreateCollection = async (req, res) => {
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
-        // Return error 
-        res.redirect('back', { title: 'Upload Images', authorized: true });
+        // Return error
+        res.redirect('back', 500, { title: 'Upload Images', authorized: true });
     }
 }
 
@@ -134,12 +135,12 @@ exports.imagesCreateImage = async (req, res) => {
             // Set notice
             helpers.setNotice(res, `An error occured: ${req.fileValidationError}`);
             // Return error
-            return res.redirect('back', { title: 'Images', authorized: true });
+            return res.redirect('back', 500, { title: 'Images', authorized: true });
         } else if (!req.file) {
             // Set notice
             helpers.setNotice(res, 'An error occured: No file provided');
             // Return error
-            return res.redirect('back', { title: 'Images', authorized: true });
+            return res.redirect('back', 500, { title: 'Images', authorized: true });
         }
 
         fileDeleted = false;
@@ -156,11 +157,11 @@ exports.imagesCreateImage = async (req, res) => {
         const compressed_path = req.file.path;
         const compressed_name = path.basename(req.file.path);
 
-        // Upload file 
+        // Upload file
         winston.info(' -- Uploading image file.');
         let response = await uploadImage({ filename: compressed_name, path: compressed_path });
 
-        // Getting image dimentions 
+        // Getting image dimentions
         winston.info(' -- Getting image dimentions.');
         var dimensions = sizeOf(req.file.path);
 
@@ -187,7 +188,7 @@ exports.imagesCreateImage = async (req, res) => {
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
             Key: resourceKey,
             Body: xml.jsonToXML(updatedResult),
             ACL: 'public-read'
@@ -206,8 +207,8 @@ exports.imagesCreateImage = async (req, res) => {
         if (!fileDeleted) deleteTemp(req.file, unlink);
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
-        // Return error 
-        res.redirect('back', { title: 'Upload Images', authorized: true });
+        // Return error
+        res.redirect('back', 500, { title: 'Upload Images', authorized: true });
     }
 }
 
@@ -243,7 +244,7 @@ exports.imagesProcess = async (req, res) => {
                 // Set notice
                 helpers.setNotice(res, `An error occured: ${err.message}`);
             }
-          
+
             fs.unlinkSync(filePath);
         });
     } catch (err) {
@@ -253,8 +254,8 @@ exports.imagesProcess = async (req, res) => {
         if (!fileDeleted) deleteTemp(req.file, unlink);
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
-        // Return error 
-        res.redirect('back', { title: 'Upload Images', authorized: true });
+        // Return error
+        res.redirect('back', 500, { title: 'Upload Images', authorized: true });
     }
 };
 
@@ -288,7 +289,7 @@ exports.imagesCollectionDestroy = async (req, res) => {
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
             Key: resourceKey,
             Body: xml.jsonToXML(result),
             ACL: 'public-read'
@@ -306,7 +307,7 @@ exports.imagesCollectionDestroy = async (req, res) => {
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error
-        res.redirect('back', { title: 'Images', authorized: true });
+        res.redirect('back', 500, { title: 'Images', authorized: true });
     }
 };
 
@@ -331,14 +332,14 @@ exports.imagesImageDestroy = async (req, res) => {
         winston.info(' -- Filtering image feed.');
         let updatedResult = updateCollection(result, collection_id, (element) => {
             element.image = element.image.filter(item => item.$.id !== id);
-            
+
             return element;
         });
 
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
             Key: resourceKey,
             Body: xml.jsonToXML(updatedResult),
             ACL: 'public-read'
@@ -356,7 +357,7 @@ exports.imagesImageDestroy = async (req, res) => {
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error
-        res.redirect('back', { title: 'Images', authorized: true });
+        res.redirect('back', 500, { title: 'Images', authorized: true });
     }
 };
 
@@ -382,14 +383,14 @@ var updateCollection = (result, id, updateCallback) => {
 }
 
 var uploadImage = async (file) => {
-    // Create file stream 
+    // Create file stream
     var fileStream = fs.createReadStream(file.path);
     fileStream.on('error', function(err) {
         winston.info('File Error', err);
     });
     // Submit to S3
     return await s3.submitS3File({
-        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts', 
+        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
         Key: file.filename,
         Body: fileStream,
         ACL: 'public-read'
