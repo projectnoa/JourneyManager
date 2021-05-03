@@ -4,7 +4,9 @@ var dateFormat = require('dateformat');
 function Tweet(item) {
     this.id = item.id[0] || null;
     this.description = parseDesc(item.description[0]);
+    this.description_raw = item.description[0];
     this.date = dateFormat(new Date(item.date[0]), "dddd, mmmm dS, yyyy");
+    this.date_raw = item.date[0];
 };
 
 var parseDesc = (text) => {

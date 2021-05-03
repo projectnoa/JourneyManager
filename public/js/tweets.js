@@ -34,6 +34,41 @@ function newTweetSetup() {
     setTweetSubmitEnabled(false);
 };
 
+function editTweetSetup() {
+    // Get element
+    var element = document.querySelector('textarea[data-behavior~="tweet-parse"]');
+    // Initialize twitter-text library
+    var twitter = require('twitter-text');
+    // Maximum tweet lenght
+    const maxLength = 280;
+    // Add input listener 
+    element.addEventListener('input', (event) => {
+        // Get element
+        let target = event.target;
+        // Get text
+        let text = target.value.trim();
+        // Process tweet data 
+        const tweetData = twitter.parseTweet(text);
+        // Calculate remaining 
+        const remaining = maxLength - tweetData.weightedLength;
+        // Set highlight behavior 
+        setHighlightBehavior(target, remaining, text, tweetData);
+        // Set tweet length data
+        setTweetLenghtData(remaining);
+        // Set submit button enabled
+        setTweetSubmitEnabled(tweetData.valid && tweetData.weightedLength > 5);
+    }, false);
+    // Set tweet length data
+    setTweetLenghtData(maxLength);
+
+    var event = new Event('input', {
+        bubbles: true,
+        cancelable: true,
+    });
+    
+    element.dispatchEvent(event);
+};
+
 var setHighlightBehavior = (target, remaining, text, tweetData) => {
     // Get element
     let placeholderBacker = target.nextSibling;

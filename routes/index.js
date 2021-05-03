@@ -49,6 +49,8 @@ router.post('/podcasts/:id/update', sessionController.validateSession, podcastsC
 router.get('/tweets', sessionController.validateSession, tweetsController.tweetsIndex);
 router.get('/tweets/new', sessionController.validateSession, tweetsController.tweetsNew);
 router.post('/tweets/create', sessionController.validateSession, tweetsController.tweetsCreate);
+router.post('/tweets/:id/edit', sessionController.validateSession, tweetsController.tweetsEdit);
+router.post('/tweets/:id/update', sessionController.validateSession, tweetsController.tweetsUpdate);
 router.post('/tweets/:id/delete', sessionController.validateSession, tweetsController.tweetsDestroy);
 
 // Images

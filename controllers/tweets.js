@@ -80,8 +80,8 @@ exports.tweetsCreate = async (req, res) => {
       // Initialize if empty
       if (result.rss.channel[0].item == undefined) result.rss.channel[0].item = [];
 
-      // Create post
-      winston.info(' -- Creating post');
+      // Create tweet
+      winston.info(' -- Creating tweet');
       // Initiate tweet
       let date = new Date();
       tweet = { 
@@ -125,6 +125,90 @@ exports.tweetsCreate = async (req, res) => {
         // Return error 
         res.redirect('back', 500, { title: 'New Tweet', authorized: true });
     }
+};
+
+exports.tweetsEdit = async (req, res) => {
+  let id = req.body.id;
+
+  try {
+    // Get live feed
+    winston.info(' -- Getting live feed.');
+    let result = await fetcher(feedURL);
+
+    // Parse posts
+    winston.info(' -- Parsing items.');
+    let items = parseTweets(result);
+
+    // Render page
+    winston.info(' -- Rendering page.');
+    res.render('./tweets/edit', {
+        title: 'Edit tweet',
+        authorized: true,
+        item: items.find(i => i.id == id),
+        entity: 'tweet'
+    });
+  } catch (err) {
+      // Log error message
+      winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+      // Set notice
+      helpers.setNotice(res, `An error occured: ${err.message}`);
+      // Return error
+      res.redirect('back', 500, { title: 'Edit tweet', authorized: true });
+  }
+};
+
+exports.tweetsUpdate = async (req, res) => {
+  try {
+    // Get live feed
+    winston.info(' -- Getting live feed.');
+    let result = await fetcher(feedURL);
+
+    // Update feed item
+    winston.info(' -- Updating feed item.');
+    let updated_items = 
+        result.rss.channel[0].item.map((item) => {
+            if (new Tweet(item).id == req.body.id) {
+                // item['id'] = [helpers.sanitize(req.body.id)];
+                // item['date'] = [helpers.sanitize(req.body.date)];
+                item['description'] = [helpers.sanitize(req.body.text)];
+            }
+
+            return item;
+        });
+
+    result.rss.channel[0].item = updated_items;
+
+    // Publish feed update
+    winston.info(' -- Publishing feed updates.');
+    let succeeded = await s3.submitS3File({
+      Bucket: process.env.JM_AWS_S3_RSS_BUCKET, 
+      Key: resourceKey,
+      Body: xml.jsonToXML(result),
+      ACL: 'public-read'
+    });
+
+    // Respond to response
+    if (helpers.isDefined(succeeded)) {
+      // Set notice
+      helpers.setNotice(res, 'Tweet updated!');
+      // Respond
+      winston.info(' -- Success.');
+      res.redirect('/tweets');
+    } else {
+      // Set notice
+      helpers.setNotice(res, 'There was an error updating the tweet.');
+      // Return error 
+      winston.warn(' -- FAILURE.');
+      res.redirect('back', 500, { title: 'Edit Tweet', authorized: true });
+    }
+  } catch (err) {
+      // Log error message
+      winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+      // Set notice
+      helpers.setNotice(res, `An error occured: ${err.message}`);
+      // Return error 
+      res.redirect('back', 500, { title: 'Edit Tweet', authorized: true });
+  }
 };
 
 exports.tweetsDestroy = async (req, res) => {

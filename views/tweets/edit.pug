@@ -1,0 +1,29 @@
+extends ../layout
+
+block head-content
+  script(src="/js/tweetparser.js")
+
+  link(rel="stylesheet" href="/css/tweets.css")
+  script(src="/js/tweets.js")
+
+  meta(name="page-id", content="editTweet")
+
+block layout-content
+  h1.mt-5.text-white.text-center Edit a tweet
+  br
+
+  div.row
+    div.col-xl-6.offset-xl-3.col-lg-8.offset-lg-2.col-10.offset-1
+      div.card.p-3
+        div.card-text
+          form(action=`/tweets/${item.id}/update`, method="post")
+            input(type="hidden", name="id", value=`${item.id}`)
+            input(type="hidden", name="date", value=`${item.date_raw}`)
+            div.form-group.tweet-composer
+              label(for='text')
+              textarea.form-control.js-keeper-editor(name="text", data-behavior='tweet-parse', placeholder="I pooped today! #blessed")=item.description_raw
+              div.js-keeper-placeholder-back
+              span.float-right(data-behavior='tweet-length')
+            br
+            center
+              input.btn.btn-md.btn-primary.px-4(type="submit", value="Update")

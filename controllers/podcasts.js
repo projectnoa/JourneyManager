@@ -246,7 +246,7 @@ exports.podcastsCreate = async (req, res) => {
                 itunes_episode_type: 'full',
                 itunes_season_number: season,
                 itunes_title: title,
-                cover_image_id: 6229,
+                cover_image_id: '6229',
                 cover_image: 'https://www.ajourneyforwisdom.com/wp-content/uploads/2021/04/DTMG-profile.jpeg'
             }
         }
@@ -302,7 +302,7 @@ exports.podcastsEdit = async (req, res) => {
       // Render page
       winston.info(' -- Rendering page.');
       res.render('./podcasts/edit', {
-          title: 'Podcasts',
+          title: 'Edit episode',
           authorized: true,
           item: items.find(i => i.id == id),
           entity: 'podcast'
@@ -313,7 +313,7 @@ exports.podcastsEdit = async (req, res) => {
       // Set notice
       helpers.setNotice(res, `An error occured: ${err.message}`);
       // Return error
-      res.redirect('back', 500, { title: 'Podcasts', authorized: true });
+      res.redirect('back', 500, { title: 'Edit episode', authorized: true });
   }
 };
 
