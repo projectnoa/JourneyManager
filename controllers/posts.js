@@ -31,7 +31,7 @@ exports.postsIndex = async (req, res) => {
 
         // Parse posts
         winston.info(' -- Parsing items.');
-        let items = result.map(item => new Post(0, item.title.rendered, item.content.rendered));
+        let items = result.map(item => new Post(item));
 
         // Render page
         winston.info(' -- Rendering page.');

@@ -26,7 +26,7 @@ exports.getPosts = (token, page=1) => {
 
     // Get all posts
     return wp.posts()
-    .perPage(5)
+    .perPage(9)
     .page(page)
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .get()

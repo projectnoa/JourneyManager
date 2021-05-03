@@ -16,11 +16,27 @@ block layout-content
   if items.length > 0
     h6.text-white !{total} Posts published, page !{page}
 
-    each item in items
-      div.row
-        div.card.w-100.p-3
-          div.card-title
-            b= item.title
-          div.card-text= item.content
+    div.row.row-cols-1.row-cols-md-3
+      each item in items
+        div.col.mb-4
+          div.card.h-100
+            a(href=`${item.link}`, target='_blank')
+              img.card-img-top(src=`${item.image}`, alt=`${item.title}`, style='max-height: 200px; object-fit: cover;')
+            div.card-header
+              a(href=`${item.link}`, target='_blank')
+                h5.card-title !{item.title}
+              h6.card-subtitle.text-muted !{item.author}
+            div.card-body
+              p !{item.excerpt}
+            div.card-footer.pb-5
+              span 
+                strong status: 
+                | !{item.status} 
+                strong.px-1 comments: 
+                | !{item.comment_status}
+              span.position-absolute(style='bottom:15px; right:5px;')
+                small.text-muted Created #{item.created} Tokyo time
+              span.position-absolute(style='bottom:0; right:5px;')
+                small.text-muted Updated #{item.updated} Tokyo time
     br
     include ../pagination.pug
