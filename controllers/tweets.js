@@ -23,6 +23,8 @@ const xml = require('./../helpers/xml');
 const feedURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/tweetbotFeed.xml';
 const resourceKey = 'tweetbotFeed.xml';
 
+var feed_cache = null;
+
 /**
  *  Methods
  */
@@ -35,7 +37,7 @@ exports.tweetsIndex = async (req, res) => {
   try {
     // Get live feed
     winston.info(' -- Getting live feed.');
-    let result = await fetcher(feedURL);
+    let result = await retrieve_feed(refresh_cookie(req));
 
     // Parse posts
     winston.info(' -- Parsing items.');
@@ -75,10 +77,10 @@ exports.tweetsCreate = async (req, res) => {
     try {
       // Get live feed
       winston.info(' -- Getting live feed.');
-      let result = await fetcher(feedURL);
+      let result = await retrieve_feed(true);
 
       // Initialize if empty
-      if (result.rss.channel[0].item == undefined) result.rss.channel[0].item = [];
+      if (result.rss.channel.item == undefined) result.rss.channel.item = [];
 
       // Create tweet
       winston.info(' -- Creating tweet');
@@ -92,7 +94,7 @@ exports.tweetsCreate = async (req, res) => {
 
       // Append item
       winston.info(' -- Appending item.');
-      result.rss.channel[0].item.push(tweet);
+      result.rss.channel.item.push(tweet);
 
       // Publish feed update
       winston.info(' -- Publishing feed updates.');
@@ -133,7 +135,7 @@ exports.tweetsEdit = async (req, res) => {
   try {
     // Get live feed
     winston.info(' -- Getting live feed.');
-    let result = await fetcher(feedURL);
+    let result = await retrieve_feed(refresh_cookie(req));
 
     // Parse posts
     winston.info(' -- Parsing items.');
@@ -161,22 +163,22 @@ exports.tweetsUpdate = async (req, res) => {
   try {
     // Get live feed
     winston.info(' -- Getting live feed.');
-    let result = await fetcher(feedURL);
+    let result = await retrieve_feed(true);
 
     // Update feed item
     winston.info(' -- Updating feed item.');
     let updated_items = 
-        result.rss.channel[0].item.map((item) => {
+        result.rss.channel.item.map((item) => {
             if (new Tweet(item).id == req.body.id) {
-                // item['id'] = [helpers.sanitize(req.body.id)];
-                // item['date'] = [helpers.sanitize(req.body.date)];
-                item['description'] = [helpers.sanitize(req.body.text)];
+                // item['id'] = helpers.sanitize(req.body.id);
+                // item['date'] = helpers.sanitize(req.body.date);
+                item['description'] = helpers.sanitize(req.body.text);
             }
 
             return item;
         });
 
-    result.rss.channel[0].item = updated_items;
+    result.rss.channel.item = updated_items;
 
     // Publish feed update
     winston.info(' -- Publishing feed updates.');
@@ -218,12 +220,12 @@ exports.tweetsDestroy = async (req, res) => {
   try {
     // Get live feed
     winston.info(' -- Getting live feed.');
-    let result = await fetcher(feedURL);
+    let result = await retrieve_feed(true);
 
     // Delete tweet
     winston.info(' -- Deleting tweet.');
-    let items = result.rss.channel[0].item;
-    result.rss.channel[0].item = items.filter(item => item.id[0] !== id);
+    let items = result.rss.channel.item;
+    result.rss.channel.item = items.filter(item => item.id !== id);
 
     // Publish feed update
     winston.info(' -- Publishing feed updates.');
@@ -259,5 +261,20 @@ exports.tweetsDestroy = async (req, res) => {
 };
 
 var parseTweets = (result) => {
-  return result.rss.channel[0].item != undefined ? result.rss.channel[0].item.map(item => new Tweet(item)).reverse() : [];
+  return result.rss.channel.item != undefined ? result.rss.channel.item.map(item => new Tweet(item)).reverse() : [];
+}
+
+var refresh_cookie = (req) => {
+  return req.cookies['_JourneyManager_fresh'] === 'true';
+}
+
+var retrieve_feed = async (fresh=false) => {
+  // If fresh feed requested or no cache
+  if (fresh === 'true' || fresh === true || !helpers.isDefined(feed_cache)) {
+      // Get live feed
+      winston.info(' -- Getting live feed.');
+      feed_cache = await fetcher(feedURL);
+  }
+  // Return feed data 
+  return feed_cache;
 }

@@ -28,43 +28,44 @@ block layout-content
   h1.mt-5.text-white.text-center Posts Images
 
   div.row.no-gutters
-    div.col
+    if items.length > 0
+      div.col
+        h6.text-white !{total} Collections, page !{page}
+    div.col-auto
       button.btn.btn-sm.text-white.float-right(type="button" data-toggle="modal" data-target="#createCollection")
         i.fas.fa-plus.fa-2x
-  if items.length > 0
-    h6.text-white !{total} Collections, page !{page}
 
-    each item in items
-      div.card
-        div.card-header(id=`heading-${item.id}`)
-          div.row.no-gutters
+  each item in items
+    div.card
+      div.card-header(id=`heading-${item.id}`)
+        div.row.no-gutters
+          div.col
+            h3.float-left= item.title
+            form(action=`/images/${item.id}/delete`, method="post", data-id=`collectionDelete-${item.id}`)
+              input(type="hidden", name="id", value=item.id)
+            i.fas.fa-trash.text-danger.m-2.pt-1(style='cursor: pointer;', data-behavior='display-confirm', data-target=`collectionDelete-${item.id}`, data-text='Are you sure you want to delete this collection? Make sure you have removed all images from all posts beforehand.')
+          div.col-auto
+            button.btn.btn-link.p-1.float-right(type='button', data-toggle='collapse', data-target=`#collapse-${item.id}`, aria-expanded='false', aria-controls=item.id)
+              i.fas.fa-angle-down.fa-2x
+      div.collapse(id=`collapse-${item.id}`, aria-labelledby=`heading-${item.id}`)
+        div.card-body
+          div.row.no-gutters.mb-3
             div.col
-              h3.float-left= item.title
-              form(action=`/images/${item.id}/delete`, method="post", data-id=`collectionDelete-${item.id}`)
-                input(type="hidden", name="id", value=item.id)
-              i.fas.fa-trash.text-danger.m-2.pt-1(style='cursor: pointer;', data-behavior='display-confirm', data-target=`collectionDelete-${item.id}`, data-text='Are you sure you want to delete this collection? Make sure you have removed all images from all posts beforehand.')
-            div.col-auto
-              button.btn.btn-link.p-1.float-right(type='button', data-toggle='collapse', data-target=`#collapse-${item.id}`, aria-expanded='false', aria-controls=item.id)
-                i.fas.fa-angle-down.fa-2x
-        div.collapse(id=`collapse-${item.id}`, aria-labelledby=`heading-${item.id}`)
-          div.card-body
-            div.row.no-gutters.mb-3
-              div.col
-                div.card.dopzone
-                  div.card-body
-                    div.post-images.image-upload.text-primary.font-weight-bold(data-behavior='post-images', data-title="Drop images here", data-id=item.id)
-            div.card-columns
-              each image in item.images
-                div.card
-                  img.card-img-top(data-src=image.url, alt=image.title)
-                  div.card-body
-                    div.card-text
-                      small.text-muted= image.url
-                      span.float-right
-                        form(action=`/images/${item.id}/image/${image.id}/delete`, method="post", data-id=`imageDelete-${image.id}`)
-                          input(type="hidden", name="collection_id", value=item.id)
-                          input(type="hidden", name="id", value=image.id)
-                          input(type="hidden", name="key", value=image.title)
-                        i.fas.fa-trash.text-danger(style='cursor: pointer;', data-behavior='display-confirm', data-target=`imageDelete-${image.id}`, data-text='Are you sure you want to delete this image? Make sure you have removed it from all posts beforehand.')
-    br
-    include ../pagination.pug
+              div.card.dopzone
+                div.card-body
+                  div.post-images.image-upload.text-primary.font-weight-bold(data-behavior='post-images', data-title="Drop images here", data-id=item.id)
+          div.card-columns
+            each image in item.images
+              div.card
+                img.card-img-top(data-src=image.url, alt=image.title)
+                div.card-body
+                  div.card-text
+                    small.text-muted= image.url
+                    span.float-right
+                      form(action=`/images/${item.id}/image/${image.id}/delete`, method="post", data-id=`imageDelete-${image.id}`)
+                        input(type="hidden", name="collection_id", value=item.id)
+                        input(type="hidden", name="id", value=image.id)
+                        input(type="hidden", name="key", value=image.title)
+                      i.fas.fa-trash.text-danger(style='cursor: pointer;', data-behavior='display-confirm', data-target=`imageDelete-${image.id}`, data-text='Are you sure you want to delete this image? Make sure you have removed it from all posts beforehand.')
+  br
+  include ../pagination.pug

@@ -6,6 +6,9 @@ block head-content
 
   script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.2/jquery.validate.min.js", integrity="sha512-UdIMMlVx0HEynClOIFSyOrPggomfhBKJE28LKl8yR3ghkgugPnG6iLfRfHwushZl1MOPSY6TsuBDGPK2X4zYKg==", crossorigin="anonymous")
 
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.23.0/trumbowyg.min.js", integrity="sha512-sffB9/tXFFTwradcJHhojkhmrCj0hWeaz8M05Aaap5/vlYBfLx5Y7woKi6y0NrqVNgben6OIANTGGlojPTQGEw==", crossorigin="anonymous")
+  link(rel="stylesheet",href="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.23.0/ui/trumbowyg.min.css", integrity="sha512-iw/TO6rC/bRmSOiXlanoUCVdNrnJBCOufp2s3vhTPyP1Z0CtTSBNbEd5wIo8VJanpONGJSyPOZ5ZRjZ/ojmc7g==", crossorigin="anonymous")
+
   link(rel="stylesheet" href="/css/podcasts.css")
   script(src="/js/podcasts.js")
 
@@ -29,7 +32,7 @@ block layout-content
                 input.form-control(type="text", value=`${item.title}`, name="title", placeholder="Enter an episode title", required=true)
             div.form-group
                 label(for='description') Description
-                textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=item.description_raw
+                textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=item.description
             div.form-group
                 label(for='keywords') Keywords
                 input.form-control(type="text", name="keywords", value=`${item.keywords}`, placeholder="Enter some keywords separated by comma", required=true)
@@ -40,7 +43,7 @@ block layout-content
                         label(for='season') Season
                         -var selected = false;
                         select.form-control(name='season')
-                          each op in [...Array(10).keys()]
+                          each op in [...Array(10).keys()].map(x => ++x)
                             -if (item.season == op) {
                               -selected=true;
                             -} else {
@@ -52,7 +55,7 @@ block layout-content
                         label(for='episode') Episode
                         -var selected = false;
                         select.form-control(name='episode')
-                          each op in [...Array(100).keys()]
+                          each op in [...Array(100).keys()].map(x => ++x)
                             -if (item.episode == op) {
                               -selected=true;
                             -} else {

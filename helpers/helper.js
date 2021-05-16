@@ -18,6 +18,10 @@ exports.setNotice = (res, message) => {
     res.cookie('_JourneyManager_notice', message, { maxAge: 1000 * 3, httpOnly: false, signed: false });
 }
 
+exports.isStrEq = (str, val) => {
+    return (this.isDefined(str) && (typeof str === 'string' || str instanceof String) && str.toLowerCase() == val.toLowerCase())
+}
+
 /**
  * Removes XML-invalid characters from a string.
  * @param {string} string - a string potentially containing XML-invalid characters, such as non-UTF8 characters, STX, EOX and so on.

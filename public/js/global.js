@@ -17,3 +17,14 @@ window.addEventListener("load", () => {
     // Set delete behaviors 
     setDeleteBehavior();
 });
+
+var refreshPage = () => {
+    var date = addMinutes(new Date(), 1);
+    document.cookie = '_JourneyManager_fresh=true; expires=' + date.toGMTString() + ';';
+
+    location.reload();
+};
+
+function addMinutes(date, minutes) {
+    return new Date(date.getTime() + minutes*60000);
+}

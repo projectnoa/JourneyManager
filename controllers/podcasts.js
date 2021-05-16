@@ -34,6 +34,8 @@ const podcastImageURL = podcastURL + 'images/DTMG-profile-v3.jpeg';
 
 const podcastFilesFolder = '2021';
 
+var feed_cache = null;
+
 /**
  *  Methods
  */
@@ -44,9 +46,8 @@ exports.podcastsIndex = async (req, res) => {
     if (page == undefined) page = 1;
 
     try {
-        // Get live feed
-        winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+        // Retrieve feed data
+        let result = await retrieve_feed(refresh_cookie(req));
 
         // Parse posts
         winston.info(' -- Parsing items.');
@@ -78,8 +79,10 @@ exports.podcastsIndex = async (req, res) => {
     }
 };
 
-exports.podcastsNew = (req, res) => {
-    res.render('./../views/podcasts/new', { title: 'New Episode', authorized: true });
+exports.podcastsNew = async (req, res) => {
+    let season_data = await retrieve_season_data(req);
+
+    res.render('./../views/podcasts/new', { title: 'New Episode', season: season_data.season, episode: season_data.episode, authorized: true });
 };
 
 exports.podcastsCreate = async (req, res) => {
@@ -157,7 +160,7 @@ exports.podcastsCreate = async (req, res) => {
         let localPubDate = moment(new Date(localDateString));
         let season = req.body.season;
         let episode = req.body.episode;
-        let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'true' : 'false';
+        let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
         let postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
         let length = req.body.length;
         let duration = req.body.duration;
@@ -166,11 +169,23 @@ exports.podcastsCreate = async (req, res) => {
         // Create feed item
         winston.info(' -- Creating feed item.');
         let feedItem = {
-            title: [title],
-            'itunes:episodeType': 'full',
-            'link': [postURL + postSlug],
-            'pubDate': [`${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`],
-            description: [description],
+            title: `${episode} | ${title}`,
+            'itunes:title': title,
+            'pubDate': [`${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} +0000`],
+            'guid': {
+                $: {
+                    'isPermaLink': 'true'
+                },
+                '_': s3URL
+            },
+            'link': postURL + postSlug,
+            'itunes:image': {
+                $: {
+                    href: podcastImageURL
+                }
+            },
+            description: description,
+            'content:encoded': description,
             'enclosure': {
                 $: {
                     url: s3URL,
@@ -178,26 +193,26 @@ exports.podcastsCreate = async (req, res) => {
                     type: 'audio/mpeg'
                 }
             },
-            guid: [s3URL],
             'itunes:duration': duration,
-            'itunes:image': {
-                $: {
-                    href: podcastImageURL
-                }
-            },
-            'itunes:keywords': [keywords],
+            'itunes:explicit': explicit,
+            'itunes:keywords': keywords,
             'itunes:season': season,
             'itunes:episode': episode,
-            'itunes:explicit': [explicit]
+            'itunes:episodeType': 'full',
+            'itunes:author': 'A Journey for Wisdom'
         };
 
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+        let result = await retrieve_feed(true);
 
-        // Append item
+        // Append item to front
         winston.info(' -- Appending item.');
-        result.rss.channel[0].item.push(feedItem);
+        result.rss.channel.item.unshift(feedItem);
+
+        // Update pubdate and lastbuilddate
+        result.rss.channel.pubDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} +0000`;
+        result.rss.channel.lastBuildDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} +0000`;
 
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
@@ -293,7 +308,7 @@ exports.podcastsEdit = async (req, res) => {
   try {
       // Get live feed
       winston.info(' -- Getting live feed.');
-      let result = await fetcher(feedURL);
+      let result = await retrieve_feed(true);
 
       // Parse posts
       winston.info(' -- Parsing items.');
@@ -395,23 +410,24 @@ exports.podcastsUpdate = async (req, res) => {
         let keywords = helpers.sanitize(req.body.keywords);
         let season = req.body.season;
         let episode = req.body.episode;
-        let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'true' : 'false';
+        let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
 
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+        let result = await retrieve_feed(true);
 
         // Update feed item
         winston.info(' -- Updating feed item.');
         let updated_items = 
-            result.rss.channel[0].item.map((item) => {
+            result.rss.channel.item.map((item) => {
                 if (new Podcast(item).id == req.body.id) {
-                    item['title'] = [title];
-                    item['description'] = [description];
-                    item['itunes:keywords'] = [keywords];
+                    item['title'] = title;
+                    item['description'] = description;
+                    item['content:encoded'] = description,
+                    item['itunes:keywords'] = keywords;
                     item['itunes:season'] = season;
                     item['itunes:episode'] = episode;
-                    item['itunes:explicit'] = [explicit];
+                    item['itunes:explicit'] = explicit;
 
                     if (!fileDeleted) {
                         item['enclosure'] = {
@@ -421,7 +437,12 @@ exports.podcastsUpdate = async (req, res) => {
                                 type: 'audio/mpeg'
                             }
                         };
-                        item['guid'] = [s3URL];
+                        item['guid'] = {
+                            $: {
+                                'isPermaLink': 'true'
+                            },
+                            '_': s3URL
+                        };
                         item['itunes:duration'] = duration;
                     }
                 }
@@ -429,7 +450,7 @@ exports.podcastsUpdate = async (req, res) => {
                 return item;
             });
         
-        result.rss.channel[0].item = updated_items;
+        result.rss.channel.item = updated_items;
 
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
@@ -467,7 +488,7 @@ exports.podcastsUpdate = async (req, res) => {
 };
 
 var parsePodcast = (result) => {
-    return result.rss.channel[0].item.map(item => new Podcast(item)).reverse();
+    return result.rss.channel.item.map(item => new Podcast(item));
 }
 
 var createTags = async (tags, token) => {
@@ -488,4 +509,35 @@ var createTags = async (tags, token) => {
     }
 
     return tag_ids;
+}
+
+var refresh_cookie = (req) => {
+    return req.cookies['_JourneyManager_fresh'] === 'true';
+}
+
+var retrieve_feed = async (fresh=false) => {
+    // If fresh feed requested or no cache
+    if (fresh === 'true' || fresh === true || !helpers.isDefined(feed_cache)) {
+        // Get live feed
+        winston.info(' -- Getting live feed.');
+        feed_cache = await fetcher(feedURL);
+    }
+    // Return feed data 
+    return feed_cache;
+}
+
+var retrieve_season_data = async (req) => {
+    try {
+        // Retrieve feed data
+        let result = await retrieve_feed(refresh_cookie(req));
+
+        let items = result.rss.channel.item;
+
+        let current_season = Math.max.apply(Math, items.map(x => parseInt(x['itunes:season'])).filter(Number));
+        let current_episode = Math.max.apply(Math, items.filter(x => parseInt(x['itunes:season']) == current_season && helpers.isStrEq(x['itunes:episodeType'], 'full')).map(x => parseInt(x['itunes:episode'])).filter(Number));
+
+        return { season: current_season, episode: current_episode + 1 }
+    } catch (err) {
+        return { season: 1, episode: 1 }
+    }
 }

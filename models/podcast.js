@@ -6,8 +6,9 @@ function Podcast(item) {
     this.title = getVal(item, 'title');
     this.postLink = getVal(item, 'link');
     this.pubDate = dateFormat(getVal(item, 'pubDate'), 'dddd, mmmm dS yyyy, h:MM TT');
-    this.description = parseDesc(getVal(item, 'description'));
-    this.description_raw = getVal(item, 'description');
+    // this.description = parseDesc(getVal(item, 'description'));
+    // this.description_raw = getVal(item, 'description');
+    this.description = getVal(item, 'description');
     this.url = getVal(item, 'guid');
     this.duration = getVal(item, 'itunes:duration');
     this.keywords = getVal(item, 'itunes:keywords').split(',');
@@ -17,15 +18,11 @@ function Podcast(item) {
 };
 
 var getVal = (item, property) => {
-    return (item[property] || [''])[0].trim();
+    let val = (item[property] || ['']);
+
+    if (typeof val == 'object') val = val['_'];
+
+    return val;
 };
-
-var parseDesc = (text) => {
-    text = text.replace(/(^|\s)(#[a-z\d-]+)/ig, '<em class="hashtag">$&</em>');
-    text = text.replace(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g, '<a href="$&">$&</a>');
-    text = text.replace(/\n/g, '<br />');
-
-    return text;
-}
 
 module.exports = Podcast;
