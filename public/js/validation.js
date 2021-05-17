@@ -11,7 +11,7 @@ var setPodcastFormValidationBehavior = () => {
             },
             "description": {
                 required: true,
-                rangelength: [10, 1000]
+                rangelength: [10, 5000]
             },
             "keywords": {
                 required: true,

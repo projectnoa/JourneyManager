@@ -147,17 +147,17 @@ exports.podcastsCreate = async (req, res) => {
         winston.info(' -- Parsing form data.');
 
         // Format Dates
-        let pdtDateString = new Date(req.body.pubDate).toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-        let gmtDateString = new Date(req.body.pubDate).toLocaleString("en-US", { timeZone: "GMT" });
-        let localDateString = new Date(req.body.pubDate);
+        let pubDate = new Date(req.body.pubDate);
+        let pdtDateString = pubDate.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+        let gmtDateString = pubDate.toLocaleString("en-US", { timeZone: "GMT" });
         // Set properties
         let title = helpers.sanitize(req.body.title);
-        let description = helpers.sanitize(req.body.description);
+        let description = helpers.clearHTMLStyles(helpers.sanitize(req.body.description));
         let keywords = helpers.sanitize(req.body.keywords);
         let tags = keywords.split(',').map(tag => tag.trim());
         let pdtPubDate = moment(new Date(pdtDateString));
         let gmtPubDate = moment(new Date(gmtDateString));
-        let localPubDate = moment(new Date(localDateString));
+        let localPubDate = moment(pubDate);
         let season = req.body.season;
         let episode = req.body.episode;
         let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
@@ -237,15 +237,16 @@ exports.podcastsCreate = async (req, res) => {
         winston.info(' -- Creating podcast post');
         let size = req.file.size / 1000000
         let futurePublish = localPubDate.isAfter(moment());
+        let description_clean = helpers.stripHTML(description);
 
         // Instantiate podcast post
         let podcastPost = {
             slug: postSlug,
             status: futurePublish ? 'future' : 'publish',
             title: title,
-            content: helpers.formatPost(description) + helpers.podcastFooter(),
+            content: description + helpers.podcastFooter(),
             author: req.session.profile.id,
-            excerpt: description.length > 250 ? description.slice(0, 250) + '...' : description,
+            excerpt: description_clean.length > 250 ? description.slice(0, 250) + '...' : description_clean,
             featured_media: 6121, /* PODCAST IMAGE ID */
             series: 61, /* PODCAST SERIES ID */
             comment_status: 'closed',
@@ -406,7 +407,7 @@ exports.podcastsUpdate = async (req, res) => {
 
         // Set properties
         let title = helpers.sanitize(req.body.title);
-        let description = helpers.sanitize(req.body.description);
+        let description = helpers.clearHTMLStyles(helpers.sanitize(req.body.description));
         let keywords = helpers.sanitize(req.body.keywords);
         let season = req.body.season;
         let episode = req.body.episode;

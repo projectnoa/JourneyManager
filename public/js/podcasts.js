@@ -132,6 +132,7 @@ var setupForm = () => {
 
   $('textarea').trumbowyg(
     {
+      removeformatPasted: true,
       btns: [
         ['viewHTML'],
         ['undo', 'redo'], // Only supported in Blink browsers

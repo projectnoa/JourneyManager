@@ -1,4 +1,6 @@
 
+const SSHTML = require('string-strip-html');
+
 exports.fileFilter = function(req, file, cb) {
     // Accept mp3 files only
     if (!file.originalname.match(/\.(mp3)$/)) {
@@ -82,4 +84,32 @@ exports.postFooter = () => {
     const discussion = '';
 
     return spacer + discussion;
+}
+
+exports.stripHTML = (str) => {
+    return SSHTML.stripHtml(str).result;
+}
+
+exports.clearHTMLStyles = (str) => {
+    str = str.replace(/<strong><br><\/strong>/g, '<br>');
+    str = str.replace(/<p><br><\/p>/g, '<br>');
+    str = str.replace(/<strong><\/strong>/g, '');
+    str = str.replace(/<p><\/p>/g, ''); // put last.
+
+    // for chrome bug. https://github.com/Alex-D/Trumbowyg/issues/103
+    str = str.replace(/ ?face=[\d\D]* ?/g, '');
+    str = str.replace(/ ?font-family:[\d\D]*; ?/g, '');
+    str = str.replace(/ ?font-family:[\d\D]*; ?/g, '');
+    str = str.replace(/ ?font-size:[\d\D]*; ?/g, '');
+    str = str.replace(/ ?font-weight:[\d\D]*; ?/g, '');
+    str = str.replace(/ ?line-height:[\d\D]*; ?/g, '');
+    str = str.replace(/ ?background-color:[\d\D]*; ?/g, '');
+    str = str.replace(/ ?color:[\d\D]*; ?/g, '');
+
+    str = str.replace(/ ?id="null" ?/g, '');
+    str = str.replace(/ ?text-align: left; ?/g, '');
+    str = str.replace(/ style=""/g, '');
+    str = str.replace(/<>/g, '');
+
+    return str;
 }
