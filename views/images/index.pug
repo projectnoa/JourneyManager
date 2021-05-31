@@ -50,7 +50,7 @@ block layout-content
                   form(action=`/images/${item.id}/delete`, method="post", data-id=`collectionDelete-${item.id}`)
                     input(type="hidden", name="id", value=item.id)
                     input(type="hidden", name="source", value=result.title)
-                  i.fas.fa-trash.text-danger.m-2.pt-1(style='cursor: pointer;', data-behavior='display-confirm', data-target=`collectionDelete-${item.id}`, data-text='Are you sure you want to delete this collection? Make sure you have removed all images from all posts beforehand.')
+                  i.fas.fa-trash.text-danger.m-2.pt-1(style='cursor: pointer;', data-behavior='display-confirm', data-target=`collectionDelete-${item.id}`, data-text='Are you sure you want to delete this collection? Make sure you have removed all images beforehand.')
                 div.col-auto
                   button.btn.btn-link.p-1.float-right(type='button', data-toggle='collapse', data-target=`#collapse-${item.id}`, aria-expanded='false', aria-controls=item.id)
                     i.fas.fa-angle-down.fa-2x
