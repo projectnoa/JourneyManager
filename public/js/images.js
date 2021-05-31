@@ -14,20 +14,26 @@ function imagesSetup() {
         if (dropzoneElement.dataset.initialized) {
             // Do nothing
         } else {
-            // Set dropzone
-            new Dropzone(dropzoneElement, { 
+            // Initialize config
+            let config = { 
                 url: `/images/createImage`,
                 paramName: "file",
-                params: { collection_id: dropzoneElement.dataset.id },
+                params: { collection_id: dropzoneElement.dataset.id, source: dropzoneElement.dataset.source },
                 maxFilesize: 1, 
                 uploadMultiple: false,
                 parallelUploads: 1,
                 createImageThumbnails: false,
-                resizeWidth: 600,
-                resizeMimeType: 'image/jpeg',
                 acceptedFiles: 'image/*',
                 enctype: "multipart/form-data"
-            }).on("sending", (file, xhr, formData) => {
+            };
+
+            if (dropzoneElement.dataset.source === 'posts') {
+                config['resizeWidth'] = 600;
+                config['resizeMimeType'] = 'image/jpeg';
+            }
+
+            // Set dropzone
+            new Dropzone(dropzoneElement, config).on("sending", (file, xhr, formData) => {
                 // Will send the filesize along with the file as POST data.
                 formData.append("filesize", file.size);
 
@@ -69,6 +75,12 @@ function imagesSetup() {
         // Submit form
         form.submit();
     });
+
+    $('#createCollection').on('shown.bs.modal', function (e) {
+        let target = e.target;
+
+        target.querySelector('input[type="hidden"]').value = document.querySelector('a[class="nav-link active"]').innerHTML;
+    })
 }
 
 function newImagesSetup() {

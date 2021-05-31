@@ -28,7 +28,14 @@ const xml = require('./../helpers/xml');
  * Variables
  */
 
-const feedURL = 'https://s3-us-west-2.amazonaws.com/assets.ajourneyforwisdom.com/posts/settings.xml';
+const feedURL = {
+    posts: 'https://s3-us-west-2.amazonaws.com/assets.ajourneyforwisdom.com/posts/settings.xml', 
+    global: 'https://s3-us-west-2.amazonaws.com/assets.ajourneyforwisdom.com/global/settings.xml', 
+    emails: 'https://s3-us-west-2.amazonaws.com/assets.ajourneyforwisdom.com/emails/settings.xml'
+};
+
+const sources = ['posts', 'global', 'emails'];
+
 const resourceKey = 'settings.xml';
 
 /**
@@ -37,33 +44,44 @@ const resourceKey = 'settings.xml';
 
 exports.imagesIndex = async (req, res) => {
     let page = req.query.page;
+    let tab = req.query.tab;
 
     if (page == undefined) page = 1;
 
     try {
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+
+        var results = [];
+
+        if (!sources.includes(tab)) tab = sources[0];
 
         // Parse posts
         winston.info(' -- Parsing items.');
-        let items = parseImages(result);
+        for (const source of sources) {
+            const url = feedURL[source];
+            let result = await fetcher(url);
 
-        let total = items.length;
-        let pages = Math.ceil(total / 5);
+            let items = parseImages(result);
 
-        items = items.slice((page - 1) * 5, page * 5);
+            let total = items.length;
+            let pages = Math.ceil(total / 5);
+
+            items = items.slice((page - 1) * 5, page * 5);
+
+            let url_elements = url.split('/');
+            let title = url_elements[url_elements.length - 2];
+
+            results.push({ title: title, items: items, total: total, pages: pages, page: parseInt(page), active: source === tab });
+        };
 
         // Render page
         winston.info(' -- Rendering page.');
         res.render('./images/index', {
             title: 'Images',
             authorized: true,
-            items: items,
-            entity: 'images',
-            page: parseInt(page),
-            total: total,
-            pages: pages
+            results: results,
+            entity: 'images'
         });
     } catch (err) {
         // Log error message
@@ -80,10 +98,14 @@ exports.imagesNew = (req, res) => {
 };
 
 exports.imagesCreateCollection = async (req, res) => {
+    let source = req.body.source;
+
     try {
+        if (!sources.includes(source)) throw 'Missing source!'
+
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+        let result = await fetcher(feedURL[source]);
 
         // If no items then initialize
         if (result.resources.collection == undefined) {
@@ -97,7 +119,7 @@ exports.imagesCreateCollection = async (req, res) => {
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
             Key: resourceKey,
             Body: xml.jsonToXML(result),
             ACL: 'public-read'
@@ -108,7 +130,7 @@ exports.imagesCreateCollection = async (req, res) => {
 
         // Respond
         winston.info(' -- Success.');
-        res.redirect('/images');
+        res.redirect('/images?tab=' + source);
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
@@ -148,10 +170,14 @@ exports.imagesCreateImage = async (req, res) => {
         // Get image collection id
         var collection_id = req.body.collection_id;
 
+        let source = req.body.source;
+
+        if (!sources.includes(source)) throw 'Missing source!'
+
         // Compressing image
         winston.info(' -- Compressing images.');
         let jimpImg = await Jimp.read(req.file.path);
-        await jimpImg.quality(80);
+        await jimpImg.quality(60);
         await jimpImg.writeAsync(req.file.path);
 
         const compressed_path = req.file.path;
@@ -159,7 +185,7 @@ exports.imagesCreateImage = async (req, res) => {
 
         // Upload file
         winston.info(' -- Uploading image file.');
-        let response = await uploadImage({ filename: compressed_name, path: compressed_path });
+        let response = await uploadImage({ filename: compressed_name, path: compressed_path }, source);
 
         // Getting image dimentions
         winston.info(' -- Getting image dimentions.');
@@ -173,12 +199,16 @@ exports.imagesCreateImage = async (req, res) => {
 
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+        let result = await fetcher(feedURL[source]);
 
         // Append item
         winston.info(' -- Appending item.');
         let updatedResult = updateCollection(result, collection_id, (element) => {
-            if (element.image == undefined) element.image = [];
+            if (element.image == undefined) {
+                element.image = [];
+            } else if (!Array.isArray(element.image)) {
+                element.image = [element.image];
+            }
 
             element.image.push({ $: { id: new Date().getTime(), title: compressed_name, url: response.Location, width: dimensions.width, height: dimensions.height } });
 
@@ -188,7 +218,7 @@ exports.imagesCreateImage = async (req, res) => {
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
             Key: resourceKey,
             Body: xml.jsonToXML(updatedResult),
             ACL: 'public-read'
@@ -199,7 +229,7 @@ exports.imagesCreateImage = async (req, res) => {
 
         // Respond
         winston.info(' -- Success.');
-        res.status(200).send({ redirectTo: '/images' });
+        res.status(200).send({ redirectTo: '/images?tab=' + source });
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
@@ -227,7 +257,7 @@ exports.imagesProcess = async (req, res) => {
         // Compressing image
         winston.info(' -- Compressing images.');
         let jimpImg = await Jimp.read(req.file.path);
-        await jimpImg.quality(80);
+        await jimpImg.quality(60);
         await jimpImg.writeAsync(req.file.path);
 
         const filePath = req.file.path;
@@ -262,11 +292,14 @@ exports.imagesProcess = async (req, res) => {
 exports.imagesCollectionDestroy = async (req, res) => {
     // Get removed collection id
     var collection_id = req.body.id;
+    let source = req.body.source;
 
     try {
+        if (!sources.includes(source)) throw 'Missing source!'
+
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+        let result = await fetcher(feedURL[source]);
 
         // Find collection
         winston.info(' -- Finding collection.');
@@ -278,7 +311,7 @@ exports.imagesCollectionDestroy = async (req, res) => {
             // Delete every image on collection
             for (const image of collection.image) {
                 const key = image.$.title;
-                await removeImage(key);
+                await removeImage(key, source);
             }
         }
 
@@ -289,7 +322,7 @@ exports.imagesCollectionDestroy = async (req, res) => {
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
             Key: resourceKey,
             Body: xml.jsonToXML(result),
             ACL: 'public-read'
@@ -300,7 +333,7 @@ exports.imagesCollectionDestroy = async (req, res) => {
 
         // Respond
         winston.info(' -- Success.');
-        res.redirect('/images');
+        res.redirect('/images?tab=' + source);
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
@@ -318,15 +351,18 @@ exports.imagesImageDestroy = async (req, res) => {
     var collection_id = req.body.collection_id;
     // Get removed image key
     var key = req.body.key;
+    let source = req.body.source;
 
     try {
+        if (!sources.includes(source)) throw 'Missing source!'
+
         // Remove image from S3
         winston.info(' -- Deleting image file.');
-        let response = await removeImage(key);
+        let response = await removeImage(key, source);
 
         // Get live feed
         winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL);
+        let result = await fetcher(feedURL[source]);
 
         // Filter item
         winston.info(' -- Filtering image feed.');
@@ -339,7 +375,7 @@ exports.imagesImageDestroy = async (req, res) => {
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
         let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
             Key: resourceKey,
             Body: xml.jsonToXML(updatedResult),
             ACL: 'public-read'
@@ -350,7 +386,7 @@ exports.imagesImageDestroy = async (req, res) => {
 
         // Respond
         winston.info(' -- Success.');
-        res.redirect('/images');
+        res.redirect('/images?tab=' + source);
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
@@ -365,8 +401,8 @@ var parseImages = (result) => {
     return result.resources.collection !== undefined ? result.resources.collection.map(item => new Collection(item)).reverse() : [];
 }
 
-var removeImage = async (key) => {
-    return await s3.deleteS3File(process.env.JM_AWS_S3_ASSETS_BUCKET, 'posts/' + key);
+var removeImage = async (key, source) => {
+    return await s3.deleteS3File(process.env.JM_AWS_S3_ASSETS_BUCKET, source + '/' + key);
 }
 
 var updateCollection = (result, id, updateCallback) => {
@@ -382,7 +418,7 @@ var updateCollection = (result, id, updateCallback) => {
     return result;
 }
 
-var uploadImage = async (file) => {
+var uploadImage = async (file, source) => {
     // Create file stream
     var fileStream = fs.createReadStream(file.path);
     fileStream.on('error', function(err) {
@@ -390,7 +426,7 @@ var uploadImage = async (file) => {
     });
     // Submit to S3
     return await s3.submitS3File({
-        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/posts',
+        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
         Key: file.filename,
         Body: fileStream,
         ACL: 'public-read'
