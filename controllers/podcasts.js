@@ -56,6 +56,8 @@ exports.podcastsIndex = async (req, res) => {
         let total = items.length;
         let pages = Math.ceil(total / 5);
 
+        newsletter = items.slice(0, 2).map(i => { return { title: i.title, desc: helpers.stripHTML(i.description).substring(0, 250) + '...', url: i.postURL } });
+
         items = items.slice((page - 1) * 5, page * 5);
 
         // Render page
@@ -67,7 +69,8 @@ exports.podcastsIndex = async (req, res) => {
             entity: 'podcasts',
             page: parseInt(page),
             total: total,
-            pages: pages
+            pages: pages,
+            newsletter: newsletter
         });
     } catch (err) {
         // Log error message
