@@ -17,20 +17,21 @@ block layout-content
           button.close(type="button", data-dismiss="modal", aria-label="Close")
             span(aria-hidden="true") &times;
         div.modal-body.newsletter-html
-          each item in newsletter
-              div.row(style="font-family:verdana,geneva")
-                div.col-auto
-                  div.card-image
-                    a(href=`${item.postLink}`)
-                      img(width="200", height="200", src="https://www.ajourneyforwisdom.com/wp-content/uploads/2021/04/DTMG-profile.jpeg", alt="podcast logo", title="Don't Tell My Grandma Podcast")
-                div.col-md-7
-                  a(style="text-decoration:none", href=`${item.postLink}`)
-                    p(style="color:black;font-size: 25px") !{item.title}
-                    p(style="color:gray;font-size: 16px;text-align: justify") !{item.desc}
-                  div.footer Listen on 
-                    a.btn.btn-just-icon.btn-simple(style="text-decoration:none", href="https://open.spotify.com/show/6lE2wuNeVtx3CtZe9uZ2TW?si=re4zDrxXQKi2C1aAAyxtxg", target="_blank", rel="noopener", aria-label="spotify") Spotify
-                    a.btn.btn-just-icon.btn-simple(style="text-decoration:none", href="https://podcasts.apple.com/jp/podcast/dont-tell-my-grandma/id1510359100", target="_blank", rel="noopener", aria-label="itunes") iTunes
-              br
+          table(cellspacing="0", cellpadding="0", border="0", width="100%")
+            tbody
+              each item in newsletter
+                tr
+                  td(style="padding-right:10px;padding-bottom:20px", width="50%", valign="top")
+                    table(cellpadding="0", cellspacing="0", border="0", width="100%")
+                      tbody
+                        tr
+                          td(align="center", style="font-family:Verdana,Geneva,sans-serif;font-size:25px;font-weight:bold;color:#333333;line-height:1.3em;padding:15px 0 0 0")
+                            a(href=`${item.postLink}`, 
+                              rel="noopener nofollow", 
+                              style="display:inline-block;font-size:18px;text-decoration:none;line-height:normal!important", 
+                              target="_blank") !{item.title}
+                        tr
+                          td(align="center", style="font-family:Verdana,Geneva,sans-serif;font-size:16px;font-weight:normal;color:#929292;line-height:1.4em;padding:5px 0 0 0") !{item.desc}
         div.modal-footer
           button.btn.btn-primary(type="button", onclick="copyhtml();") Copy
           button.btn.btn-secondary(type="button", data-dismiss="modal") Close
