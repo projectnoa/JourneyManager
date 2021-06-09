@@ -113,3 +113,25 @@ exports.clearHTMLStyles = (str) => {
 
     return str;
 }
+
+exports.comply = (str) => {
+    str = str.replace(/&rsquo;/g, '&apos;');
+    str = str.replace(/&lsquo;/g, '&apos;');
+    str = str.replace(/&ldquo;/g, '&quot;');
+    str = str.replace(/&rdquo;/g, '&quot;');
+    str = str.replace(/\'s/g, '&apos;s');
+    str = str.replace(/ "/g, ' &quot;');
+    str = str.replace(/" /g, '&quot; ');
+    str = str.replace(/,"/g, ',&quot;');
+    str = str.replace(/",/g, '&quot;,');
+    str = str.replace(/."/g, '.&quot;');
+    str = str.replace(/"./g, '&quot;.');
+    str = str.replace(/ & /g, '&amp;');
+    str = str.replace(/ < /g, '&lt;');
+    str = str.replace(/ > /g, '&gt;');
+    str = str.replace(/©/g, '&#xA9;');
+    str = str.replace(/℗/g, '&#x2117;');
+    str = str.replace(/™/g, '&#x2122;');
+
+    return str;
+}

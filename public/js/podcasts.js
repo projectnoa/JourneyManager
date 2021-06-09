@@ -58,8 +58,8 @@ var setupUploader = () => {
         // Asynchronously decode audio file data contained in an ArrayBuffer.
         audioContext.decodeAudioData(arrayBuffer, (buffer) => {
             // Obtain the duration in seconds of the audio file (with milliseconds as well, a float value)
-            let length = buffer.duration * 1000;
-            let duration = new Date(length).toISOString().substr(11 ,8);
+            let duration = buffer.duration;
+            let length = duration * 1000;
             // Set duration info
             document.querySelector('input[type="hidden"][name="length"]').value = length;
             document.querySelector('input[type="hidden"][name="duration"]').value = duration;

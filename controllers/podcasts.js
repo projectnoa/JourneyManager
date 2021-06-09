@@ -172,8 +172,8 @@ exports.podcastsCreate = async (req, res) => {
         // Create feed item
         winston.info(' -- Creating feed item.');
         let feedItem = {
-            title: `${episode} | ${title}`,
-            'itunes:title': title,
+            title: helpers.comply(title),
+            'itunes:title': helpers.comply(title),
             'pubDate': [`${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} +0000`],
             'guid': {
                 $: {
@@ -187,8 +187,8 @@ exports.podcastsCreate = async (req, res) => {
                     href: podcastImageURL
                 }
             },
-            description: description,
-            'content:encoded': description,
+            description: helpers.comply(description),
+            'content:encoded': helpers.comply(description),
             'enclosure': {
                 $: {
                     url: s3URL,
@@ -198,7 +198,7 @@ exports.podcastsCreate = async (req, res) => {
             },
             'itunes:duration': duration,
             'itunes:explicit': explicit,
-            'itunes:keywords': keywords,
+            'itunes:keywords': helpers.comply(keywords),
             'itunes:season': season,
             'itunes:episode': episode,
             'itunes:episodeType': 'full',
@@ -425,10 +425,10 @@ exports.podcastsUpdate = async (req, res) => {
         let updated_items = 
             result.rss.channel.item.map((item) => {
                 if (new Podcast(item).id == req.body.id) {
-                    item['title'] = title;
-                    item['description'] = description;
-                    item['content:encoded'] = description,
-                    item['itunes:keywords'] = keywords;
+                    item['title'] = helpers.comply(title);
+                    item['description'] = helpers.comply(description);
+                    item['content:encoded'] = helpers.comply(description),
+                    item['itunes:keywords'] = helpers.comply(keywords);
                     item['itunes:season'] = season;
                     item['itunes:episode'] = episode;
                     item['itunes:explicit'] = explicit;
@@ -440,12 +440,6 @@ exports.podcastsUpdate = async (req, res) => {
                                 length: Math.trunc(length),
                                 type: 'audio/mpeg'
                             }
-                        };
-                        item['guid'] = {
-                            $: {
-                                'isPermaLink': 'true'
-                            },
-                            '_': s3URL
                         };
                         item['itunes:duration'] = duration;
                     }
