@@ -249,10 +249,10 @@ exports.podcastsCreate = async (req, res) => {
             title: title,
             content: description + helpers.podcastFooter(),
             author: req.session.profile.id,
-            excerpt: description_clean.length > 250 ? description.slice(0, 250) + '...' : description_clean,
+            excerpt: description_clean.length > 250 ? description_clean.slice(0, 250) + '...' : description_clean,
             featured_media: 6121, /* PODCAST IMAGE ID */
             series: 61, /* PODCAST SERIES ID */
-            comment_status: 'closed',
+            comment_status: 'open',
             tags: tag_ids,
             meta: {
                 audio_file: s3URL,
