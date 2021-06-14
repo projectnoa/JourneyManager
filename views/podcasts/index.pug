@@ -9,6 +9,30 @@ block head-content
 block layout-content
   h1.mt-5.text-white.text-center Podcasts
 
+  -var template = "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\" width=\"100%\">"
+  -template += "  <tbody>"
+  
+  each item in newsletter
+    -template += "    <tr>"
+    -template += "      <td style=\"padding-right:10px;padding-bottom:20px\" width=\"50%\" valign=\"top\">"
+    -template += "        <table cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\">"
+    -template += "          <tbody>"
+    -template += "            <tr>"
+    -template += "              <td align=\"center\" style=\"font-family:Verdana,Geneva,sans-serif;font-size:25px;font-weight:bold;color:#333333;line-height:1.3em;padding:15px 0 0 0\">"
+    -template += `                <a href=\"${item.url}\" rel=\"noopener nofollow\" style=\"display:inline-block;font-size:18px;text-decoration:none;line-height:normal!important\" target=\"_blank\">${item.title}</a>`
+    -template += "              </td>"
+    -template += "            </tr>"
+    -template += "            <tr>"
+    -template += `              <td align=\"center\" style=\"font-family:Verdana,Geneva,sans-serif;font-size:16px;font-weight:normal;color:#929292;line-height:1.4em;padding:5px 0 0 0\">${item.desc}</td>`
+    -template += "            </tr>"
+    -template += "          </tbody>"
+    -template += "        </table>"
+    -template += "      </td>"
+    -template += "    </tr>"
+  
+  -template += "  </tbody>"
+  -template += "</table>"
+
   div.modal.fade(tabindex="-1", id="newsletter-html", aria-labelledby="exampleModalLabel", aria-hidden="true")
     div.modal-dialog.modal-xl
       div.modal-content
@@ -17,23 +41,8 @@ block layout-content
           button.close(type="button", data-dismiss="modal", aria-label="Close")
             span(aria-hidden="true") &times;
         div.modal-body.newsletter-html
-          table(cellspacing="0", cellpadding="0", border="0", width="100%")
-            tbody
-              each item in newsletter
-                tr
-                  td(style="padding-right:10px;padding-bottom:20px", width="50%", valign="top")
-                    table(cellpadding="0", cellspacing="0", border="0", width="100%")
-                      tbody
-                        tr
-                          td(align="center", style="font-family:Verdana,Geneva,sans-serif;font-size:25px;font-weight:bold;color:#333333;line-height:1.3em;padding:15px 0 0 0")
-                            a(href=`${item.postLink}`, 
-                              rel="noopener nofollow", 
-                              style="display:inline-block;font-size:18px;text-decoration:none;line-height:normal!important", 
-                              target="_blank") !{item.title}
-                        tr
-                          td(align="center", style="font-family:Verdana,Geneva,sans-serif;font-size:16px;font-weight:normal;color:#929292;line-height:1.4em;padding:5px 0 0 0") !{item.desc}
+          textarea.w-100(name="newsletter-info", cols="100", rows="20")=template
         div.modal-footer
-          button.btn.btn-primary(type="button", onclick="copyhtml();") Copy
           button.btn.btn-secondary(type="button", data-dismiss="modal") Close
 
   div.row.no-gutters
