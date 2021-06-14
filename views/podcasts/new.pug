@@ -21,6 +21,26 @@ block layout-content
   h1.mt-5.text-white.text-center Create a podcast episode
   br
 
+  -var template = "<p>Hi listeners!&nbsp;</p>"
+  -template += "<br>"
+  -template += "[--WRITE HERE--]"
+  -template += "<br>"
+  -template += "<br>"
+  -template += "<br>"
+  -template += "<p>Email us your questions and suggestions to <a href=\"mailto:podcast@donttellmygrandma.com\">podcast@donttellmygrandma.com</a>&nbsp;</p>"
+  -template += "<br>"
+  -template += "<ul>"
+  -template += "  <li>Website:&nbsp;<a href=\"https://www.ajourneyforwisdom.com\">www.ajourneyforwisdom.com</a>&nbsp;</li>"
+  -template += "  <li>Twitter:&nbsp;<a href=\"https://twitter.com/ajourney4wisdom\">twitter.com/ajourney4wisdom</a>&nbsp;</li>"
+  -template += "  <li>Instagram:&nbsp;<a href=\"https://www.instagram.com/ajourneyforwisdom\">instagram.com/ajourneyforwisdom</a>&nbsp;</li>"
+  -template += "  <li>YouTube:&nbsp;<a href=\"https://www.youtube.com/channel/UC0xIBmkqFrnmOXbsX6BeMjg\">Don\'t Tell my Grandma</a>&nbsp;</li>"
+  -template += "  <li>Pinterest: <a href=\"https://pinterest.com/ajourneyforwisdom\">pinterest.com/ajourneyforwisdom</a></li>"
+  -template += "</ul>"
+  -template += "<br>"
+  -template += "<p>Please consider supporting us on Patreon at <a href=\"https://patreon.com/donttellmygrandma\">patreon.com/donttellmygrandma</a>&nbsp;</p>"
+  -template += "<br>"
+  -template += "<p>Sound effects from <a href=\"https://www.zapsplat.com\">zapsplat.com</a></p>"
+
   div.row
     div.col-xl-6.offset-xl-3.col-lg-8.offset-lg-2.col-10.offset-1
       div.card.p-3
@@ -31,7 +51,7 @@ block layout-content
                 input.form-control(type="text", name="title", placeholder="Enter an episode title", required=true)
             div.form-group
                 label(for='description') Description
-                textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=`<p>Hi listeners!</p><br><br><p>Email us your questions and suggestions to <a href="mailto:podcast@donttellmygrandma.com">podcast@donttellmygrandma.com</a></p><br><ul><li>Website <a href="https://www.ajourneyforwisdom.com">ajourneyforwisdom.com</a></li><li>Twitter <a href="https://twitter.com/ajourney4wisdom">@ajourney4wisdom</a></li><li>Instagram <a href="https://www.instagram.com/ajourneyforwisdom">ajourneyforwisdom</a></li></ul><br><p>Sound effects from <a href="https://www.zapsplat.com">zapsplat.com</a></p>`
+                textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=template
             div.form-group
                 label(for='keywords') Keywords
                 input.form-control(type="text", name="keywords", placeholder="Enter some keywords separated by comma", required=true)
