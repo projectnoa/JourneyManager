@@ -63,13 +63,19 @@ block layout-content
     div.row.no-gutters
       div.col
         div.card
-          div.card-header
+          
+          - var cardtype = ''
+          if item.type.toLowerCase() != 'full'
+            - cardtype = 'bg-warning'
+
+          div(class=`card-header ${cardtype}`)
             h5.card-title !{item.title}
-            h6.card-subtitle.text-muted !{item.keywords}
-            if item.explicit
-              span.badge.badge-pill.badge-danger.position-absolute(style='top:10px; right:50px;') explicit
-            else
-              span.badge.badge-pill.badge-primary.position-absolute(style='top:10px; right:50px;') clean
+            if item.type.toLowerCase() == 'full'
+              h6.card-subtitle.text-muted !{item.keywords}
+              if item.explicit
+                span.badge.badge-pill.badge-danger.position-absolute(style='top:10px; right:50px;') explicit
+              else
+                span.badge.badge-pill.badge-primary.position-absolute(style='top:10px; right:50px;') clean
             span.position-absolute(style='top:0; right:5px;')
                 form(action=`/podcasts/${item.id}/edit`, method="post")
                   input(type="hidden", name="id", value=`${item.id}`)
@@ -81,10 +87,11 @@ block layout-content
             span 
               strong season: 
               | !{item.season} 
-              strong.px-1 episode: 
-              | !{item.episode}
-              strong.px-1 duration:
-              | !{item.duration} seconds
+              if item.type.toLowerCase() == 'full'
+                strong.px-1 episode: 
+                | !{item.episode}
+                strong.px-1 duration:
+                | !{new Date(item.duration * 1000).toISOString().substr(11, 8)}
             span.position-absolute(style='bottom:0; right:5px;')
               small.text-muted #{item.pubDate} Tokyo time
   br

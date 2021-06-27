@@ -44,6 +44,8 @@ var setupUploader = () => {
     if (target.files && target.files[0]) {
       // Display loading screen
       displayLoading(true);
+      // Set length (File size in bytes)
+      document.querySelector('input[type="hidden"][name="length"]').value = target.files[0].size;
       // Initialize file reader
       let reader = new FileReader();
       // Set load listener
@@ -57,11 +59,9 @@ var setupUploader = () => {
         var audioContext = new (window.AudioContext || window.webkitAudioContext)();
         // Asynchronously decode audio file data contained in an ArrayBuffer.
         audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-            // Obtain the duration in seconds of the audio file (with milliseconds as well, a float value)
-            let duration = buffer.duration;
-            let length = duration * 1000;
+            // Obtain the duration in seconds of the audio file
+            let duration = Math.round(buffer.duration);
             // Set duration info
-            document.querySelector('input[type="hidden"][name="length"]').value = length;
             document.querySelector('input[type="hidden"][name="duration"]').value = duration;
             // Hide loading screen
             displayLoading(false);

@@ -88,8 +88,13 @@ block layout-content
                         span.input-group-text
                             i.fas.fa-calendar-alt
             div.form-check
-                input.form-check-input(type="checkbox", name="explicit")
-                label.form-check-label(for='explicit') Is explicit?
+              div.row
+                div.col-lg-6
+                  input.form-check-input(type="checkbox", name="explicit")
+                  label.form-check-label(for='explicit') Is explicit?
+                div.col-lg-6
+                  input.form-check-input(type="checkbox", name="post", checked=true)
+                  label.form-check-label(for='post') Publish post?
             div.form-group
                 label.sr-only(for='file') Podcast file
                 input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload', required=true)

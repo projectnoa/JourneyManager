@@ -15,6 +15,7 @@ function Podcast(item) {
     this.explicit = getVal(item, 'itunes:explicit') == 'true';
     this.episode = getVal(item, 'itunes:episode');
     this.season = getVal(item, 'itunes:season');
+    this.type = getVal(item, 'itunes:episodeType');
 };
 
 var getVal = (item, property) => {

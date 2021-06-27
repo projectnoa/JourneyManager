@@ -56,7 +56,7 @@ exports.podcastsIndex = async (req, res) => {
         let total = items.length;
         let pages = Math.ceil(total / 5);
 
-        newsletter = items.slice(0, 2).map(i => { return { title: i.title, desc: helpers.stripHTML(i.description).substring(0, 250) + '...', url: i.postLink } });
+        newsletter = items.filter(i => i.type.toLowerCase() === 'full').slice(0, 2).map(i => { return { title: i.title, desc: helpers.stripHTML(i.description).substring(0, 250) + '...', url: i.postLink } });
 
         items = items.slice((page - 1) * 5, page * 5);
 
@@ -168,13 +168,14 @@ exports.podcastsCreate = async (req, res) => {
         let length = req.body.length;
         let duration = req.body.duration;
         let s3URL = uploadResponse.Location;
+        let publish_post = req.body.post;
 
         // Create feed item
         winston.info(' -- Creating feed item.');
         let feedItem = {
             title: helpers.comply(title),
             'itunes:title': helpers.comply(title),
-            'pubDate': [`${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} +0000`],
+            'pubDate': [`${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`],
             'guid': {
                 $: {
                     'isPermaLink': 'true'
@@ -201,7 +202,7 @@ exports.podcastsCreate = async (req, res) => {
             'itunes:keywords': helpers.comply(keywords),
             'itunes:season': season,
             'itunes:episode': episode,
-            'itunes:episodeType': 'full',
+            'itunes:episodeType': 'Full',
             'itunes:author': 'A Journey for Wisdom'
         };
 
@@ -214,8 +215,8 @@ exports.podcastsCreate = async (req, res) => {
         result.rss.channel.item.unshift(feedItem);
 
         // Update pubdate and lastbuilddate
-        result.rss.channel.pubDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} +0000`;
-        result.rss.channel.lastBuildDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} +0000`;
+        result.rss.channel.pubDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`;
+        result.rss.channel.lastBuildDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`;
 
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
@@ -232,67 +233,75 @@ exports.podcastsCreate = async (req, res) => {
 
         fileDeleted = true;
 
-        // Publish podcast tags
-        winston.info(' -- Publishing podcast tags');
-        let tag_ids = await createTags(tags, req.session.accessToken);
+        if (publish_post === 'true' || publish_post === 'on') {
+            // Publish podcast tags
+            winston.info(' -- Publishing podcast tags');
+            let tag_ids = await createTags(tags, req.session.accessToken);
 
-        // Create podcast post
-        winston.info(' -- Creating podcast post');
-        let size = req.file.size / 1000000
-        let futurePublish = localPubDate.isAfter(moment());
-        let description_clean = helpers.stripHTML(description);
+            // Create podcast post
+            winston.info(' -- Creating podcast post');
+            let size = req.file.size / 1000000
+            let futurePublish = localPubDate.isAfter(moment());
+            let description_clean = helpers.stripHTML(description);
 
-        // Instantiate podcast post
-        let podcastPost = {
-            slug: postSlug,
-            status: futurePublish ? 'future' : 'publish',
-            title: title,
-            content: description + helpers.podcastFooter(),
-            author: req.session.profile.id,
-            excerpt: description_clean.length > 250 ? description_clean.slice(0, 250) + '...' : description_clean,
-            featured_media: 6121, /* PODCAST IMAGE ID */
-            series: 61, /* PODCAST SERIES ID */
-            comment_status: 'open',
-            tags: tag_ids,
-            meta: {
-                audio_file: s3URL,
-                date_recorded: localPubDate.format("DD-MM-yyyy"),
-                duration: duration,
-                episode_type: 'audio',
-                explicit: explicit,
-                filesize: Math.trunc(size) + ' Mb',
-                itunes_episode_number: episode,
-                itunes_episode_type: 'full',
-                itunes_season_number: season,
-                itunes_title: title,
-                cover_image_id: '6229',
-                cover_image: 'https://www.ajourneyforwisdom.com/wp-content/uploads/2021/04/DTMG-profile.jpeg'
+            // Instantiate podcast post
+            let podcastPost = {
+                slug: postSlug,
+                status: futurePublish ? 'future' : 'publish',
+                title: title,
+                content: description + helpers.podcastFooter(),
+                author: req.session.profile.id,
+                excerpt: description_clean.length > 250 ? description_clean.slice(0, 250) + '...' : description_clean,
+                featured_media: 6121, /* PODCAST IMAGE ID */
+                series: 61, /* PODCAST SERIES ID */
+                comment_status: 'open',
+                tags: tag_ids,
+                meta: {
+                    audio_file: s3URL,
+                    date_recorded: localPubDate.format("DD-MM-yyyy"),
+                    duration: duration,
+                    episode_type: 'audio',
+                    explicit: explicit,
+                    filesize: Math.trunc(size) + ' Mb',
+                    itunes_episode_number: episode,
+                    itunes_episode_type: 'full',
+                    itunes_season_number: season,
+                    itunes_title: title,
+                    cover_image_id: '6229',
+                    cover_image: 'https://www.ajourneyforwisdom.com/wp-content/uploads/2021/04/DTMG-profile.jpeg'
+                }
             }
-        }
 
-        // Check if is a future post
-        if (futurePublish) {
-            podcastPost['date'] = localPubDate.format('YYYY-M-DTHH:mm:ss');
-            podcastPost['date_gmt'] = gmtPubDate.format('YYYY-M-DTHH:mm:ss');
-        }
+            // Check if is a future post
+            if (futurePublish) {
+                podcastPost['date'] = localPubDate.format('YYYY-M-DTHH:mm:ss');
+                podcastPost['date_gmt'] = gmtPubDate.format('YYYY-M-DTHH:mm:ss');
+            }
 
-        // Publish podcast post
-        winston.info(' -- Publishing podcast post.');
-        let succeeded = await wp.publishPodcast(podcastPost, req.session.accessToken);
+            // Publish podcast post
+            winston.info(' -- Publishing podcast post.');
+            let succeeded = await wp.publishPodcast(podcastPost, req.session.accessToken);
 
-        // Respond to response
-        if (helpers.isDefined(succeeded)) {
+            // Respond to response
+            if (helpers.isDefined(succeeded)) {
+                // Set notice
+                helpers.setNotice(res, 'Podcast episode published & posted!');
+                // Respond
+                winston.info(' -- Success.');
+                res.status(200).send({ redirectTo: '/podcasts' });
+            } else {
+                // Set notice
+                helpers.setNotice(res, 'There was an error posting the podcast episode.');
+                // Return error
+                winston.warn(' -- FAILURE.');
+                res.redirect('back', 500, { title: 'New Podcast', authorized: true });
+            }
+        } else {
             // Set notice
-            helpers.setNotice(res, 'Podcast episode posted!');
+            helpers.setNotice(res, 'Podcast episode published!');
             // Respond
             winston.info(' -- Success.');
             res.status(200).send({ redirectTo: '/podcasts' });
-        } else {
-            // Set notice
-            helpers.setNotice(res, 'There was an error posting the podcast episode.');
-            // Return error
-            winston.warn(' -- FAILURE.');
-            res.redirect('back', 500, { title: 'New Podcast', authorized: true });
         }
     } catch (err) {
         // Log error message
