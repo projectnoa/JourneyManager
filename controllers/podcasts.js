@@ -120,7 +120,7 @@ exports.podcastsCreate = async (req, res) => {
         let pubDate = moment(pubDateObj);
         let pubDateGMT = moment(pubDateObj.toLocaleString("en-US", { timeZone: "GMT" }));
         
-        let pubDateStr = pubDate.format('ddd, D MMM YYYY HH:mm:ss ZZ');
+        let pubDateStr = pubDate.format('ddd, D MMM YYYY HH:mm:ss') + ' JST';
         let pubDateShortStr = pubDate.format('YYYY-M-DTHH:mm:ss');
         let pubDateShortGMTStr = pubDateGMT.format('YYYY-M-DTHH:mm:ss');
 
