@@ -6,7 +6,7 @@ function Post(item) {
     this.title = item.title.rendered || null;
     this.link = item.link || null;
     this.status = item.status || null;
-    this.image = item.jetpack_featured_media_url || null;
+    this.image = item._embedded["wp:featuredmedia"][0].source_url || null;
     this.comment_status = item.comment_status || null;
     this.author = (item.author == 1 ? 'Juan' : 'Wendy');
     this.created = dateFormat(new Date(item.date), "dddd, mmmm dS, yyyy") || null;

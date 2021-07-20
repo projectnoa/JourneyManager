@@ -38,6 +38,8 @@ router.get('/posts', sessionController.validateSession, postsController.postsInd
 router.get('/posts/new', sessionController.validateSession, postsController.postsNew);
 router.post('/posts/create', sessionController.validateSession, postsController.postsCreate);
 
+router.get('/tags/search', sessionController.validateSession, postsController.tagsSearch);
+
 // Podcasts
 router.get('/podcasts', sessionController.validateSession, podcastsController.podcastsIndex);
 router.get('/podcasts/new', sessionController.validateSession, podcastsController.podcastsNew);

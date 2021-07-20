@@ -9,6 +9,10 @@ block head-content
   script(src="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.23.0/trumbowyg.min.js", integrity="sha512-sffB9/tXFFTwradcJHhojkhmrCj0hWeaz8M05Aaap5/vlYBfLx5Y7woKi6y0NrqVNgben6OIANTGGlojPTQGEw==", crossorigin="anonymous")
   link(rel="stylesheet",href="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.23.0/ui/trumbowyg.min.css", integrity="sha512-iw/TO6rC/bRmSOiXlanoUCVdNrnJBCOufp2s3vhTPyP1Z0CtTSBNbEd5wIo8VJanpONGJSyPOZ5ZRjZ/ojmc7g==", crossorigin="anonymous")
 
+  script(src="https://unpkg.com/@yaireo/tagify")
+  script(src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js")
+  link(href="https://unpkg.com/@yaireo/tagify/dist/tagify.css", rel="stylesheet", type="text/css")
+
   link(rel="stylesheet" href="/css/podcasts.css")
   script(src="/js/podcasts.js")
 
@@ -21,25 +25,20 @@ block layout-content
   h1.mt-5.text-white.text-center Create a podcast episode
   br
 
-  -var template = "<p>Hi listeners!&nbsp;</p>"
-  -template += "<br>"
-  -template += "[--WRITE HERE--]"
-  -template += "<br>"
-  -template += "<br>"
-  -template += "<br>"
-  -template += "<p>Email us your questions and suggestions to <a href=\"mailto:podcast@donttellmygrandma.com\">podcast@donttellmygrandma.com</a>&nbsp;</p>"
-  -template += "<br>"
-  -template += "<ul>"
-  -template += "  <li>Website:&nbsp;<a href=\"https://www.ajourneyforwisdom.com\">www.ajourneyforwisdom.com</a>&nbsp;<br></li>"
-  -template += "  <li>Twitter:&nbsp;<a href=\"https://twitter.com/ajourney4wisdom\">twitter.com/ajourney4wisdom</a>&nbsp;<br></li>"
-  -template += "  <li>Instagram:&nbsp;<a href=\"https://www.instagram.com/ajourneyforwisdom\">instagram.com/ajourneyforwisdom</a>&nbsp;<br></li>"
-  -template += "  <li>YouTube:&nbsp;<a href=\"https://www.youtube.com/channel/UC0xIBmkqFrnmOXbsX6BeMjg\">Don\'t Tell my Grandma</a>&nbsp;<br></li>"
-  -template += "  <li>Pinterest: <a href=\"https://pinterest.com/ajourneyforwisdom\">pinterest.com/ajourneyforwisdom</a>&nbsp;<br></li>"
-  -template += "</ul>"
-  -template += "<br>"
-  -template += "<p>Please consider supporting us on Patreon at <a href=\"https://patreon.com/donttellmygrandma\">patreon.com/donttellmygrandma</a>&nbsp;</p>"
-  -template += "<br>"
-  -template += "<p>Sound effects from <a href=\"https://www.zapsplat.com\">zapsplat.com</a></p>"
+  -var desc_template = "<p>Hi listeners!&nbsp;</p>"
+  -desc_template += "<br>"
+
+  -var info_template = "<br><p>Email us your questions and suggestions to <a href=\"mailto:podcast@donttellmygrandma.com\">podcast@donttellmygrandma.com</a>&nbsp;</p>"
+  -info_template += "<br>"
+  -info_template += "-&nbsp;Website:&nbsp;<a href=\"https://www.ajourneyforwisdom.com\">www.ajourneyforwisdom.com</a>&nbsp;<br>"
+  -info_template += "-&nbsp;Twitter:&nbsp;<a href=\"https://twitter.com/ajourney4wisdom\">twitter.com/ajourney4wisdom</a>&nbsp;<br>"
+  -info_template += "-&nbsp;Instagram:&nbsp;<a href=\"https://www.instagram.com/ajourneyforwisdom\">instagram.com/ajourneyforwisdom</a>&nbsp;<br>"
+  -info_template += "-&nbsp;YouTube:&nbsp;<a href=\"https://www.youtube.com/channel/UC0xIBmkqFrnmOXbsX6BeMjg\">Don\'t Tell my Grandma</a>&nbsp;<br>"
+  -info_template += "-&nbsp;Pinterest:&nbsp;<a href=\"https://pinterest.com/ajourneyforwisdom\">pinterest.com/ajourneyforwisdom</a>&nbsp;<br>"
+  -info_template += "<br>"
+  -info_template += "<p>Please consider supporting us on Patreon at <a href=\"https://patreon.com/donttellmygrandma\">patreon.com/donttellmygrandma</a>&nbsp;</p>"
+  -info_template += "<br>"
+  -info_template += "<p>Sound effects from <a href=\"https://www.zapsplat.com\">zapsplat.com</a></p>"
 
   div.row
     div.col-xl-6.offset-xl-3.col-lg-8.offset-lg-2.col-10.offset-1
@@ -47,59 +46,77 @@ block layout-content
         div.card-text
           form(action="/podcasts/create", method="post", enctype="multipart/form-data")
             div.form-group
-                label(for='title') Title
-                input.form-control(type="text", name="title", placeholder="Enter an episode title", required=true)
+              label.sr-only(for='file') Audio file
+              input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop audio file here", data-behavior='file-upload', required=true)
+              input(type="hidden", name="length")
+              input(type="hidden", name="duration")
             div.form-group
-                label(for='description') Description
-                textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=template
+              label(for='title') Title:
+              input.form-control(type="text", name="title", placeholder="Enter an episode title", required=true, data-behavior='post-title')
             div.form-group
-                label(for='keywords') Keywords
-                input.form-control(type="text", name="keywords", placeholder="Enter some keywords separated by comma", required=true)
-                small.form-text.text-muted Example: Mental health, Habits, Success.
+              label(for='posturl') Post URL:
+              div.row.no-gutters
+                div.col-auto(style="font-size:small; padding-top:8px;") https://www.ajourneyforwisdom.com/podcast/
+                div.col
+                  input.form-control(type="text", name="posturl", placeholder="", required=true, style="font-size:small; padding: 0; border: 0; color: blue;", data-behavior='post-url')
+                small.form-text.text-muted Updated with title (Click to modify manually if necessary).
             div.form-group
-                div.row
-                    div.col-lg-6
-                        label(for='season') Season
-                        -var selected = false;
-                        select.form-control(name='season')
-                            each op in [...Array(10).keys()].map(x => ++x)
-                                -if (season == op) {
-                                  -selected=true;
-                                -} else {
-                                  -selected=false;
-                                -}
-                                option(value=op selected=selected) #{op}
-                    div.col-lg-6
-                        label(for='episode') Episode
-                        -var selected = false;
-                        select.form-control(name='episode')
-                            each op in [...Array(100).keys()].map(x => ++x)
-                                -if (episode == op) {
-                                  -selected=true;
-                                -} else {
-                                  -selected=false;
-                                -}
-                                option(value=op selected=selected) #{op}
+              label(for='description') Description:
+              textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=desc_template
             div.form-group
-                label(for='pubDate') Publication date
+              label(for='info') Social links and podcast info:
+              span.btn.btn-sm.btn-primary.float-right(data-toggle="collapse", data-target="#collapseInfo", aria-expanded="false", aria-controls="collapseInfo") show
+              div.collapse(id="collapseInfo")
+                textarea.form-control(name="info", placeholder="Socials and stuff", required=true)=info_template
+              small.form-text.text-muted Already set. Click show to modify.
+            div.form-group
+              label(for='keywords') Keywords:
+              input.form-control(type="text", name="keywords", placeholder="", required=true, data-behavior='keywords')
+              small.form-text.text-muted Example: Mental health, Habits, Success.
+            div.form-group.row.no-gutters
+              div.col-auto
+                label(for='season', style='margin-bottom: 0;padding-top: 5px;') Season:
+              div.col-auto.px-2
+                -var selected = false;
+                select.form-control(name='season')
+                  each op in [...Array(10).keys()].map(x => ++x)
+                    -if (season == op) {
+                      -selected=true;
+                    -} else {
+                      -selected=false;
+                    -}
+                    option(value=op selected=selected) #{op}
+              div.col-auto
+                label(for='episode', style='margin-bottom: 0;padding-top: 5px;') Episode:
+              div.col-auto.px-2
+                -var selected = false;
+                select.form-control(name='episode')
+                  each op in [...Array(100).keys()].map(x => ++x)
+                    -if (episode == op) {
+                      -selected=true;
+                    -} else {
+                      -selected=false;
+                    -}
+                    option(value=op selected=selected) #{op}
+            div.form-group.row.no-gutters
+              div.col-auto
+                label(for='pubDate', style='margin-bottom: 0;padding-top: 7px;') Releasing on:
+              div.col-auto
                 div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
-                    input.form-control(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
-                    div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
-                        span.input-group-text
-                            i.fas.fa-calendar-alt
+                  input.form-control.pubdate(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
+                  //- div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
+                    span.input-group-text
+                        i.fas.fa-calendar-alt
+              div.col-auto 
+                label(style='margin-bottom: 0;padding-top: 7px;') California Time
             div.form-check
               div.row
                 div.col-lg-6
                   input.form-check-input(type="checkbox", name="explicit")
-                  label.form-check-label(for='explicit') Is explicit?
+                  label.form-check-label(for='explicit') Is it explicit?
                 div.col-lg-6
                   input.form-check-input(type="checkbox", name="post", checked=true)
-                  label.form-check-label(for='post') Publish post?
+                  label.form-check-label(for='post') Make a post?
             div.form-group
-                label.sr-only(for='file') Podcast file
-                input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload', required=true)
-                input(type="hidden", name="length")
-                input(type="hidden", name="duration")
-            br
-            center
-              input.btn.btn-md.btn-primary.px-4(type="submit", value="Publish")
+              center
+                input.btn.btn-md.btn-primary.mt-3(type="submit", value="Publish")

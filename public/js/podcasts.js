@@ -3,22 +3,36 @@
 var setupDatepicker = () => {
   // Get datepicker element
   let datepickerElement = document.querySelector('[data-behavior~="datetime-picker"]');
-  // Initialize current date with time as 9 AM
-  var date = new Date();
+
+  const weekday = moment().isoWeekday();
+  const sunday = 7;
+
+  if (weekday == sunday) {
+    // Initialize current date
+    var date = new Date();
+  } else {
+    // Initialize next Sunday
+    var date = moment().add(sunday - weekday, 'days').toDate();
+  }
+
   date.setHours(09);
   date.setMinutes(00);
   date.setSeconds(00);
+  
   // Set datepicker behavior
   $(datepickerElement).datetimepicker({
       locale: 'en',
-      format: 'M/D/YYYY hh:mm a',
-      minDate: date,
+      format: 'ddd, D MMM YYYY HH:mm',
+      // minDate: date,
       defaultDate: date,
-      sideBySide: true,
+      sideBySide: false,
       showTodayButton: true,
       showClose: true,
       keepOpen: false,
-      ignoreReadonly: true,
+      ignoreReadonly: true, 
+      // daysOfWeekDisabled: [1, 2, 3, 4, 5, 6],
+      // enabledHours: [9],
+      // timeZone: 'America/Los_Angeles',
       icons: {
           time: 'far fa-clock',
           date: 'far fa-calendar-alt',
@@ -29,8 +43,7 @@ var setupDatepicker = () => {
           today: 'far fa-calendar-check',
           clear: 'fas fa-trash',
           close: 'fas fa-times'
-      },
-      showClose: true
+      }
   });
 };
 
@@ -149,6 +162,60 @@ var setupForm = () => {
     ]
     }
   );
+
+  // Get title element
+  let titleElement = document.querySelector('input[data-behavior~="post-title"]');
+
+  if (titleElement !== null) {
+    titleElement.addEventListener('input', event => {
+      // Store reference to title
+      const target = event.target;
+  
+      let urlElement = document.querySelector('input[data-behavior~="post-url"]');
+  
+      urlElement.value = encodeURI(target.value.trim().toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
+    });
+  }
+
+  var keywordsElement = document.querySelector('input[data-behavior~="keywords"]'),
+    tagify = new Tagify(keywordsElement, {
+        whitelist : [],
+        // placeholder: 'Add or find keywords, max 8',
+        maxTags: 8,
+        transformTag: (tag) => {
+          let text = tag.value;
+
+          tag.value = text[0].toUpperCase() + text.substring(1);
+        },
+        dropdown : {
+            classname     : "color-blue",
+            maxItems      : 5,
+            position      : "text",         // place the dropdown near the typed text
+            closeOnSelect : true,          // keep the dropdown open after selecting a suggestion
+            highlightFirst: true
+        }
+    }),
+    controller;
+
+  // Listen to any keystrokes which modify tagify's input
+  tagify.on('input', event => {
+    var value = event.detail.value
+    tagify.whitelist = null // reset the whitelist
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/AbortController/abort
+    controller && controller.abort()
+    controller = new AbortController()
+
+    // show loading animation and hide the suggestions dropdown
+    tagify.loading(true).dropdown.hide()
+
+    fetch('/tags/search?term=' + value, { signal:controller.signal })
+      .then(RES => RES.json())
+      .then(function(newWhitelist){
+        tagify.whitelist = newWhitelist // update inwhitelist Array in-place
+        tagify.loading(false).dropdown.show(value) // render the suggestions dropdown
+      })
+  });
 };
 
 function podcastsSetup() {

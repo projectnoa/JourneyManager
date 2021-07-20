@@ -1,6 +1,6 @@
 {
   "name": "journey_server",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "A Journey for Wisdom manager platform",
   "main": "index.js",
   "scripts": {

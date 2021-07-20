@@ -9,6 +9,10 @@ block head-content
   script(src="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.23.0/trumbowyg.min.js", integrity="sha512-sffB9/tXFFTwradcJHhojkhmrCj0hWeaz8M05Aaap5/vlYBfLx5Y7woKi6y0NrqVNgben6OIANTGGlojPTQGEw==", crossorigin="anonymous")
   link(rel="stylesheet",href="https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.23.0/ui/trumbowyg.min.css", integrity="sha512-iw/TO6rC/bRmSOiXlanoUCVdNrnJBCOufp2s3vhTPyP1Z0CtTSBNbEd5wIo8VJanpONGJSyPOZ5ZRjZ/ojmc7g==", crossorigin="anonymous")
 
+  script(src="https://unpkg.com/@yaireo/tagify")
+  script(src="https://unpkg.com/@yaireo/tagify/dist/tagify.polyfills.min.js")
+  link(href="https://unpkg.com/@yaireo/tagify/dist/tagify.css", rel="stylesheet", type="text/css")
+
   link(rel="stylesheet" href="/css/podcasts.css")
   script(src="/js/podcasts.js")
 
@@ -18,7 +22,7 @@ block head-content
   meta(name="page-id", content="editPodcast")
 
 block layout-content
-  h1.mt-5.text-white.text-center Edit a podcast episode
+  h1.mt-5.text-white.text-center Edit podcast episode
   br
 
   div.row
@@ -28,48 +32,48 @@ block layout-content
           form(action=`/podcasts/${item.id}/update`, method="post", enctype="multipart/form-data")
             input(type="hidden", name="id", value=`${item.id}`)
             div.form-group
-                label(for='title') Title
-                input.form-control(type="text", value=`${item.title}`, name="title", placeholder="Enter an episode title", required=true)
+              label.sr-only(for='file') Audio file
+              input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop audio file here", data-behavior='file-upload', required=false)
+              input(type="hidden", name="length")
+              input(type="hidden", name="duration")
             div.form-group
-                label(for='description') Description
-                textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=item.description
+              label(for='title') Title:
+              input.form-control(type="text", value=`${item.title}`, name="title", placeholder="Enter an episode title", required=true)
             div.form-group
-                label(for='keywords') Keywords
-                input.form-control(type="text", name="keywords", value=`${item.keywords}`, placeholder="Enter some keywords separated by comma", required=true)
-                small.form-text.text-muted Example: Mental health, Habits, Success.
+              label(for='description') Description:
+              textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=item.description
             div.form-group
-                div.row
-                    div.col-lg-6
-                        label(for='season') Season
-                        -var selected = false;
-                        select.form-control(name='season')
-                          each op in [...Array(10).keys()].map(x => ++x)
-                            -if (item.season == op) {
-                              -selected=true;
-                            -} else {
-                              -selected=false;
-                            -}
-                            option(value=op selected=selected) #{op}
-                            
-                    div.col-lg-6
-                        label(for='episode') Episode
-                        -var selected = false;
-                        select.form-control(name='episode')
-                          each op in [...Array(100).keys()].map(x => ++x)
-                            -if (item.episode == op) {
-                              -selected=true;
-                            -} else {
-                              -selected=false;
-                            -}
-                            option(value=op selected=selected) #{op}
+              label(for='keywords') Keywords:
+              input.form-control(type="text", name="keywords", value=`${item.keywords}`, placeholder="", required=true, data-behavior='keywords')
+              small.form-text.text-muted Example: Mental health, Habits, Success.
+            div.form-group.row.no-gutters
+              div.col-auto
+                label(for='season', style='margin-bottom: 0;padding-top: 5px;') Season:
+              div.col-auto.px-2
+                -var selected = false;
+                select.form-control(name='season')
+                  each op in [...Array(10).keys()].map(x => ++x)
+                    -if (season == op) {
+                      -selected=true;
+                    -} else {
+                      -selected=false;
+                    -}
+                    option(value=op selected=selected) #{op}
+              div.col-auto
+                label(for='episode', style='margin-bottom: 0;padding-top: 5px;') Episode:
+              div.col-auto.px-2
+                -var selected = false;
+                select.form-control(name='episode')
+                  each op in [...Array(100).keys()].map(x => ++x)
+                    -if (episode == op) {
+                      -selected=true;
+                    -} else {
+                      -selected=false;
+                    -}
+                    option(value=op selected=selected) #{op}
             div.form-check
-                input.form-check-input(type="checkbox", name="explicit", checked=item.explicit)
-                label.form-check-label(for='explicit') Is explicit?
+              input.form-check-input(type="checkbox", name="explicit", checked=item.explicit)
+              label.form-check-label(for='explicit') Is it explicit?
             div.form-group
-                label.sr-only(for='file') Podcast file
-                input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop episode here", data-behavior='file-upload', required=false)
-                input(type="hidden", name="length")
-                input(type="hidden", name="duration")
-            br
-            center
-              input.btn.btn-md.btn-primary.px-4(type="submit", value="Update")
+              center
+                input.btn.btn-md.btn-primary.mt-3(type="submit", value="Update")

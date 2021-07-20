@@ -119,6 +119,30 @@ exports.postsCreate = async (req, res) => {
     }
 };
 
+exports.tagsSearch = async (req, res) => {
+    let term = req.query.term;
+
+    try {
+        // Get tags
+        winston.info(' -- Getting tags.');
+        let result = await wp.getTags(term, req.session.accessToken);
+
+        // Parse tags
+        winston.info(' -- Parsing items.');
+        let items = result.map(item => ({ id: item.id, value: item.name}));
+
+        // Prepare response
+        winston.info(' -- Preparing response.');
+
+        res.json(items);
+    } catch (err) {
+        // Log error message
+        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Set notice
+        helpers.setNotice(res, `An error occured: ${err.message}`);
+    }
+}
+
 var createTags = async (tags, token) => {
     let tag_ids = [];
 

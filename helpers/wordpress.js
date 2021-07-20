@@ -25,7 +25,7 @@ exports.getPosts = (token, page=1) => {
     if (page == undefined) page = 1;
 
     // Get all posts
-    return wp.posts()
+    return wp.posts().embed()
     .perPage(9)
     .page(page)
     .setHeaders( 'Authorization', 'Bearer ' + token )
@@ -55,5 +55,6 @@ exports.publishTag = (item, token) => {
 exports.getTags = (names, token) => {
     return wp.tags()
     .setHeaders( 'Authorization', 'Bearer ' + token )
-    .param('name', names)
+    .param('search', names)
+    .param('per_page', 10)
 }

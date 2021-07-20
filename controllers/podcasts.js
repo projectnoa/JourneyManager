@@ -111,6 +111,21 @@ exports.podcastsCreate = async (req, res) => {
             return res.redirect('back', 500, { title: 'New Podcast', authorized: true });
         }
 
+        // Validate form data
+        winston.info(' -- Parsing form data.');
+
+        // Format Dates (Adjust to PDT)
+        let pubDateObj = new Date(req.body.pubDate + ' PDT');
+        
+        let pubDate = moment(pubDateObj);
+        let pubDateGMT = moment(pubDateObj.toLocaleString("en-US", { timeZone: "GMT" }));
+        
+        let pubDateStr = pubDate.format('ddd, D MMM YYYY HH:mm:ss ZZ');
+        let pubDateShortStr = pubDate.format('YYYY-M-DTHH:mm:ss');
+        let pubDateShortGMTStr = pubDateGMT.format('YYYY-M-DTHH:mm:ss');
+
+        // return;
+
         fileDeleted = false;
 
         // Back up feed
@@ -146,43 +161,45 @@ exports.podcastsCreate = async (req, res) => {
             ACL: 'public-read'
         });
 
-        // Validate form data
-        winston.info(' -- Parsing form data.');
-
-        // Format Dates
-        let pubDate = new Date(req.body.pubDate);
-        let pdtDateString = pubDate.toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-        let gmtDateString = pubDate.toLocaleString("en-US", { timeZone: "GMT" });
         // Set properties
         let title = helpers.sanitize(req.body.title);
         let description = helpers.clearHTMLStyles(helpers.sanitize(req.body.description));
-        let keywords = helpers.sanitize(req.body.keywords);
-        let tags = keywords.split(',').map(tag => tag.trim());
-        let pdtPubDate = moment(new Date(pdtDateString));
-        let gmtPubDate = moment(new Date(gmtDateString));
-        let localPubDate = moment(pubDate);
+        description += helpers.clearHTMLStyles(helpers.sanitize(req.body.info));
+        
+        let tags = [];
+        let keywords = [];
+
+        try {
+            tags = JSON.parse(req.body.keywords);    
+            keywords = tags.map(tag => tag.value);
+        } catch (err) {
+            winston.warn(' -- Tags could not be processed.' + err.message);
+        }
+        
         let season = req.body.season;
         let episode = req.body.episode;
         let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
-        let postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
+        let postSlug = encodeURI(req.body.posturl.trim().toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
         let length = req.body.length;
+        let size = length / 1000000;
         let duration = req.body.duration;
         let s3URL = uploadResponse.Location;
         let publish_post = req.body.post;
+        let post_url = postURL + postSlug;
 
         // Create feed item
         winston.info(' -- Creating feed item.');
         let feedItem = {
             title: helpers.comply(title),
             'itunes:title': helpers.comply(title),
-            'pubDate': [`${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`],
+            'pubDate': [pubDateStr],
             'guid': {
                 $: {
                     'isPermaLink': 'true'
                 },
                 '_': s3URL
             },
-            'link': postURL + postSlug,
+            'link': post_url,
             'itunes:image': {
                 $: {
                     href: podcastImageURL
@@ -215,8 +232,8 @@ exports.podcastsCreate = async (req, res) => {
         result.rss.channel.item.unshift(feedItem);
 
         // Update pubdate and lastbuilddate
-        result.rss.channel.pubDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`;
-        result.rss.channel.lastBuildDate = `${pdtPubDate.format('ddd, D MMM YYYY HH:mm:ss')} PDT`;
+        result.rss.channel.pubDate = pubDateStr;
+        result.rss.channel.lastBuildDate = pubDateStr;
 
         // Publish feed update
         winston.info(' -- Publishing feed updates.');
@@ -236,18 +253,23 @@ exports.podcastsCreate = async (req, res) => {
         if (publish_post === 'true' || publish_post === 'on') {
             // Publish podcast tags
             winston.info(' -- Publishing podcast tags');
-            let tag_ids = await createTags(tags, req.session.accessToken);
+
+            let tag_ids = [];
+
+            try {
+                tag_ids = await createTags(tags, req.session.accessToken);
+            } catch (error) {
+                winston.warn(' -- Tags not posted.' + error.message);
+            }
 
             // Create podcast post
             winston.info(' -- Creating podcast post');
-            let size = req.file.size / 1000000
-            let futurePublish = localPubDate.isAfter(moment());
             let description_clean = helpers.stripHTML(description);
 
             // Instantiate podcast post
             let podcastPost = {
                 slug: postSlug,
-                status: futurePublish ? 'future' : 'publish',
+                status: 'future',
                 title: title,
                 content: description + helpers.podcastFooter(),
                 author: req.session.profile.id,
@@ -256,9 +278,11 @@ exports.podcastsCreate = async (req, res) => {
                 series: 61, /* PODCAST SERIES ID */
                 comment_status: 'open',
                 tags: tag_ids,
+                date: pubDateShortStr,
+                date_gmt: pubDateShortGMTStr,
                 meta: {
                     audio_file: s3URL,
-                    date_recorded: localPubDate.format("DD-MM-yyyy"),
+                    date_recorded: pubDate.format("DD-MM-yyyy"),
                     duration: duration,
                     episode_type: 'audio',
                     explicit: explicit,
@@ -267,15 +291,8 @@ exports.podcastsCreate = async (req, res) => {
                     itunes_episode_type: 'full',
                     itunes_season_number: season,
                     itunes_title: title,
-                    cover_image_id: '6229',
-                    cover_image: 'https://www.ajourneyforwisdom.com/wp-content/uploads/2021/04/DTMG-profile.jpeg'
+                    cover_image_id: 6229
                 }
-            }
-
-            // Check if is a future post
-            if (futurePublish) {
-                podcastPost['date'] = localPubDate.format('YYYY-M-DTHH:mm:ss');
-                podcastPost['date_gmt'] = gmtPubDate.format('YYYY-M-DTHH:mm:ss');
             }
 
             // Publish podcast post
@@ -420,7 +437,17 @@ exports.podcastsUpdate = async (req, res) => {
         // Set properties
         let title = helpers.sanitize(req.body.title);
         let description = helpers.clearHTMLStyles(helpers.sanitize(req.body.description));
-        let keywords = helpers.sanitize(req.body.keywords);
+        
+        let tags = [];
+        let keywords = [];
+
+        try {
+            tags = JSON.parse(req.body.keywords);    
+            keywords = tags.map(tag => tag.value);
+        } catch (err) {
+            winston.warn(' -- Tags could not be processed.' + err.message);
+        }
+
         let season = req.body.season;
         let episode = req.body.episode;
         let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
@@ -503,15 +530,23 @@ var createTags = async (tags, token) => {
 
     for (let index = 0; index < tags.length; index++) {
         try {
-            let tag_data = await wp.publishTag({ 'name': tags[index] }, token);
+            let tag = tags[index];
 
-            if (tag_data.id !== undefined) {
-                tag_ids.push(tag_data.id);
+            if (tag.id !== undefined) {
+                tag_ids.push(tag.id);
             } else {
-                tag_ids.push(tag_data);
+                let tag_data = await wp.publishTag({ 'name': tag.value } , token);
+
+                if (tag_data.id !== undefined) {
+                    tag_ids.push(tag_data.id);
+                } else {
+                    tag_ids.push(tag_data);
+                }
             }
         } catch (err) {
-            tag_ids.push(err.data.term_id);
+            if (err.data !== undefined && err.data.term_id !== undefined) tag_ids.push(err.data.term_id);
+            
+            winston.warn(' -- Tags could not be created. ' + err.message);
         }
     }
 
