@@ -64,15 +64,15 @@ exports.imagesIndex = async (req, res) => {
 
             let items = parseImages(result);
 
-            let total = items.length;
-            let pages = Math.ceil(total / 5);
+            // let total = items.length;
+            // let pages = Math.ceil(total / 5);
 
-            items = items.slice((page - 1) * 5, page * 5);
+            // items = items.slice((page - 1) * 5, page * 5);
 
             let url_elements = url.split('/');
             let title = url_elements[url_elements.length - 2];
 
-            results.push({ title: title, items: items, total: total, pages: pages, page: parseInt(page), active: source === tab });
+            results.push({ title: title, items: items, /*total: total, pages: pages, page: parseInt(page),*/ active: source === tab });
         };
 
         // Render page

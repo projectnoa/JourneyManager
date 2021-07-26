@@ -17,9 +17,6 @@ var setPodcastFormValidationBehavior = () => {
                 required: true,
                 rangelength: [4, 200]
             },
-            "file": {
-                required: true
-            },
             "pubDate": {
                 required: true
             }

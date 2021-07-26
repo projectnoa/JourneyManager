@@ -31,6 +31,8 @@ exports.isStrEq = (str, val) => {
  * @return : a sanitized string without all the XML-invalid characters.
  */
 exports.sanitize = (string, removeDiscouragedChars = true) => {
+    if (!this.isDefined(string)) return ' - ';
+    if (typeof string != String) return string;
     // remove everything forbidden by XML 1.0 specifications, plus the unicode replacement character U+FFFD
     var regex = /((?:[\0-\x08\x0B\f\x0E-\x1F\uFFFD\uFFFE\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]))/g;
     string = string.replace(regex, "");
@@ -91,6 +93,9 @@ exports.stripHTML = (str) => {
 }
 
 exports.clearHTMLStyles = (str) => {
+    if (!this.isDefined(str)) return ' - ';
+    if (typeof str != String) return str;
+
     str = str.replace(/<strong><br><\/strong>/g, '<br>');
     str = str.replace(/<p><br><\/p>/g, '<br>');
     str = str.replace(/<strong><\/strong>/g, '');
@@ -126,9 +131,9 @@ exports.comply = (str) => {
     str = str.replace(/",/g, '&quot;,');
     str = str.replace(/\."/g, '.&quot;');
     str = str.replace(/"\./g, '&quot;.');
-    str = str.replace(/ & /g, '&amp;');
-    str = str.replace(/ < /g, '&lt;');
-    str = str.replace(/ > /g, '&gt;');
+    str = str.replace(/ & /g, ' &amp; ');
+    str = str.replace(/ < /g, ' &lt; ');
+    str = str.replace(/ > /g, ' &gt; ');
     str = str.replace(/©/g, '&#xA9;');
     str = str.replace(/℗/g, '&#x2117;');
     str = str.replace(/™/g, '&#x2122;');

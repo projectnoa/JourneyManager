@@ -4,16 +4,12 @@
  * Required External Modules
  */
 
-const util = require('util');
-
-var fs = require('fs');
-
 var moment = require('moment');
 
 var Podcast = require('./../models/podcast');
+var Feed = require('./../models/feed');
 
 const fetcher = require('./../helpers/fetcher');
-const requestProcessor = require('./../helpers/audioUpload');
 
 const winston = require('./../helpers/winston');
 
@@ -28,11 +24,8 @@ const wp = require('./../helpers/wordpress');
 
 const feedURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/podcast.xml';
 const resourceKey = 'podcast.xml';
-const postURL = 'https://www.ajourneyforwisdom.com/podcast/';
 const podcastURL = 'https://s3.us-west-2.amazonaws.com/podcasts.ajourneyforwisdom.com/';
 const podcastImageURL = podcastURL + 'images/DTMG-profile-v3.jpeg';
-
-const podcastFilesFolder = '2021';
 
 var feed_cache = null;
 
@@ -47,19 +40,33 @@ exports.podcastsIndex = async (req, res) => {
 
     try {
         // Retrieve feed data
-        let result = await retrieve_feed(refresh_cookie(req));
-
+        let feed = await retrieve_feed(refresh_cookie(req));
+        let last_podcasts = await wp.getPodcasts();
         // Parse posts
         winston.info(' -- Parsing items.');
-        let items = parsePodcast(result);
-
+        let items = parsePodcast(feed);
         let total = items.length;
         let pages = Math.ceil(total / 5);
 
-        newsletter = items.filter(i => i.type.toLowerCase() === 'full').slice(0, 2).map(i => { return { title: i.title, desc: helpers.stripHTML(i.description).substring(0, 250) + '...', url: i.postLink } });
+        let index = 0;
+        // Get newsletter data
+        newsletter = items
+            .filter(i => i.type.toLowerCase() === 'full')
+            .slice(0, 2)
+            .map(i => { 
+                let item = { 
+                    title: i.title, 
+                    desc: helpers.stripHTML(i.description).substring(0, 250) + '...', 
+                    url: i.postLink,
+                    img: last_podcasts[index]._embedded['wp:featuredmedia'][0].source_url
+                } 
 
+                index += 1;
+
+                return item;
+            });
+        // Paginate items
         items = items.slice((page - 1) * 5, page * 5);
-
         // Render page
         winston.info(' -- Rendering page.');
         res.render('./podcasts/index', {
@@ -83,248 +90,90 @@ exports.podcastsIndex = async (req, res) => {
 };
 
 exports.podcastsNew = async (req, res) => {
-    let season_data = await retrieve_season_data(req);
+    let recording = req.query.recording;
+    let location = req.query.location;
+    let length = req.query.length;
+    let duration = req.query.duration;
+    let season = req.query.season;
+    let episode = req.query.episode;
 
-    res.render('./../views/podcasts/new', { title: 'New Episode', season: season_data.season, episode: season_data.episode, authorized: true });
+    res.render('./../views/podcasts/new', { 
+        title: 'New Episode', 
+        season: season, 
+        episode: episode, 
+        authorized: true,
+        recording: recording,
+        location: location,
+        length: length,
+        duration: duration
+    });
 };
 
 exports.podcastsCreate = async (req, res) => {
-    const unlink = util.promisify(fs.unlink);
-    let fileDeleted = true;
-
     try {
-        // Process request
-        winston.info(' -- Processing request.');
-        await requestProcessor(req, res);
-
-        // Validate file upload
-        winston.info(' -- Validating request.');
-        if (req.fileValidationError) {
-            // Set notice
-            helpers.setNotice(res, `An error occured: ${req.fileValidationError}`);
-            // Return error
-            return res.redirect('back', 500, { title: 'New Podcast', authorized: true });
-        } else if (!req.file) {
-            // Set notice
-            helpers.setNotice(res, 'An error occured: No file provided');
-            // Return error
-            return res.redirect('back', 500, { title: 'New Podcast', authorized: true });
-        }
-
-        // Validate form data
-        winston.info(' -- Parsing form data.');
-
+        // Validate date data
+        winston.info(' -- Parsing date data.');
         // Format Dates (Adjust to PDT)
         let pubDateObj = new Date(req.body.pubDate + ' PDT');
-        
         let pubDate = moment(pubDateObj);
-        let pubDateGMT = moment(pubDateObj.toLocaleString("en-US", { timeZone: "GMT" }));
-        
-        let pubDateStr = pubDate.format('ddd, D MMM YYYY HH:mm:ss') + ' JST';
-        let pubDateShortStr = pubDate.format('YYYY-M-DTHH:mm:ss');
-        let pubDateShortGMTStr = pubDateGMT.format('YYYY-M-DTHH:mm:ss');
-
-        // return;
-
-        fileDeleted = false;
-
-        // Back up feed
-        winston.info(' -- Backing up podcast feed.');
-        let backupResponse = await s3.backupFile({
-            Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup',
-            CopySource: process.env.JM_AWS_S3_RSS_BUCKET + '/' + resourceKey,
-            Key: resourceKey.split('.').join('-' + Date.now() + '.')
-        });
-
+        let pubDateStr = pubDate.format('ddd, D MMM YYYY HH:mm:ss') + ' +0900';
+        // Backup feed
+        let backupResponse = await backupFeed(res);
         // Validate backup response
         winston.info(' -- Validating backup.');
-        if (backupResponse.$response.httpResponse.statusCode !== 200) {
-            // Set notice
-            helpers.setNotice(res, 'There was an error backing up the feed');
-            // Return error
-            return res.redirect('back', 500, { title: 'New Podcast', authorized: true });
-        }
-
-        // Create file stream
-        winston.info(' -- Reading podcast file stream.');
-        var fileStream = fs.createReadStream(req.file.path);
-        fileStream.on('error', function(err) {
-            winston.warn('File Error', err);
-        });
-
-        // Upload file
-        winston.info(' -- Uploading podcast file.');
-        let uploadResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_FILE_BUCKET + '/' + podcastFilesFolder,
-            Key: req.file.filename,
-            Body: fileStream,
-            ACL: 'public-read'
-        });
-
-        // Set properties
-        let title = helpers.sanitize(req.body.title);
-        let description = helpers.clearHTMLStyles(helpers.sanitize(req.body.description));
-        description += helpers.clearHTMLStyles(helpers.sanitize(req.body.info));
-        
-        let tags = [];
-        let keywords = [];
-
-        try {
-            tags = JSON.parse(req.body.keywords);    
-            keywords = tags.map(tag => tag.value);
-        } catch (err) {
-            winston.warn(' -- Tags could not be processed.' + err.message);
-        }
-        
-        let season = req.body.season;
-        let episode = req.body.episode;
-        let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
-        let postSlug = encodeURI(req.body.posturl.trim().toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
-        let length = req.body.length;
-        let size = length / 1000000;
-        let duration = req.body.duration;
-        let s3URL = uploadResponse.Location;
-        let publish_post = req.body.post;
-        let post_url = postURL + postSlug;
-
-        // Create feed item
-        winston.info(' -- Creating feed item.');
-        let feedItem = {
-            title: helpers.comply(title),
-            'itunes:title': helpers.comply(title),
-            'pubDate': [pubDateStr],
-            'guid': {
-                $: {
-                    'isPermaLink': 'true'
-                },
-                '_': s3URL
-            },
-            'link': post_url,
-            'itunes:image': {
-                $: {
-                    href: podcastImageURL
+        if (helpers.isDefined(backupResponse) && backupResponse.$response.httpResponse.statusCode === 200) {
+            // Create feed object
+            let data = new Feed(req);
+            // Create feed item 
+            let feedItem = createFeedItem(data, pubDateStr);
+            // Get live feed
+            winston.info(' -- Getting live feed.');
+            let feed = await retrieve_feed(true);
+            // Append item to front
+            winston.info(' -- Appending item.');
+            feed.rss.channel.item.unshift(feedItem);
+            // Update pubdate and lastbuilddate
+            feed.rss.channel.pubDate = pubDateStr;
+            feed.rss.channel.lastBuildDate = pubDateStr;
+            // Update feed 
+            let feedResponse = await updateFeed(feed);
+            // Validate feed response
+            winston.info(' -- Validating feed update.');
+            if (helpers.isDefined(feedResponse)) {
+                // Determine if post should be published
+                let publish_post = req.body.post;
+                // If a post is scheduled to be published 
+                if (publish_post === 'true' || publish_post === 'on') {
+                    let postItem = createPostItem(req, feedObj, pubDate);
+                    // Publish podcast post
+                    winston.info(' -- Publishing podcast post.');
+                    let succeeded = await wp.publishPodcast(postItem, req.session.accessToken);
+                    // Confirm if post was posted
+                    if (helpers.isDefined(succeeded)) {
+                        // Set notice
+                        helpers.setNotice(res, 'Podcast episode published & posted!');
+                        // Respond
+                        winston.info(' -- Success.');
+                        res.status(200).send({ redirectTo: '/podcasts' });
+                    } else {
+                        throw new Error('Post could not be published.');
+                    }
+                } else {
+                    // Set notice
+                    helpers.setNotice(res, 'Podcast episode published!');
+                    // Respond
+                    winston.info(' -- Success.');
+                    res.status(200).send({ redirectTo: '/podcasts' });
                 }
-            },
-            description: helpers.comply(description),
-            'content:encoded': helpers.comply(description),
-            'enclosure': {
-                $: {
-                    url: s3URL,
-                    length: Math.trunc(length),
-                    type: 'audio/mpeg'
-                }
-            },
-            'itunes:duration': duration,
-            'itunes:explicit': explicit,
-            'itunes:keywords': helpers.comply(keywords),
-            'itunes:season': season,
-            'itunes:episode': episode,
-            'itunes:episodeType': 'Full',
-            'itunes:author': 'A Journey for Wisdom'
-        };
-
-        // Get live feed
-        winston.info(' -- Getting live feed.');
-        let result = await retrieve_feed(true);
-
-        // Append item to front
-        winston.info(' -- Appending item.');
-        result.rss.channel.item.unshift(feedItem);
-
-        // Update pubdate and lastbuilddate
-        result.rss.channel.pubDate = pubDateStr;
-        result.rss.channel.lastBuildDate = pubDateStr;
-
-        // Publish feed update
-        winston.info(' -- Publishing feed updates.');
-        let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_RSS_BUCKET,
-            Key: resourceKey,
-            Body: xml.jsonToXML(result),
-            ACL: 'public-read'
-        });
-
-        // Delete file
-        winston.info(' -- Deleting temp file.');
-        await unlink(req.file.path);
-
-        fileDeleted = true;
-
-        if (publish_post === 'true' || publish_post === 'on') {
-            // Publish podcast tags
-            winston.info(' -- Publishing podcast tags');
-
-            let tag_ids = [];
-
-            try {
-                tag_ids = await createTags(tags, req.session.accessToken);
-            } catch (error) {
-                winston.warn(' -- Tags not posted.' + error.message);
-            }
-
-            // Create podcast post
-            winston.info(' -- Creating podcast post');
-            let description_clean = helpers.stripHTML(description);
-
-            // Instantiate podcast post
-            let podcastPost = {
-                slug: postSlug,
-                status: 'future',
-                title: title,
-                content: description + helpers.podcastFooter(),
-                author: req.session.profile.id,
-                excerpt: description_clean.length > 250 ? description_clean.slice(0, 250) + '...' : description_clean,
-                featured_media: 6121, /* PODCAST IMAGE ID */
-                series: 61, /* PODCAST SERIES ID */
-                comment_status: 'open',
-                tags: tag_ids,
-                date: pubDateShortStr,
-                date_gmt: pubDateShortGMTStr,
-                meta: {
-                    audio_file: s3URL,
-                    date_recorded: pubDate.format("DD-MM-yyyy"),
-                    duration: duration,
-                    episode_type: 'audio',
-                    explicit: explicit,
-                    filesize: Math.trunc(size) + ' Mb',
-                    itunes_episode_number: episode,
-                    itunes_episode_type: 'full',
-                    itunes_season_number: season,
-                    itunes_title: title,
-                    cover_image_id: 6229
-                }
-            }
-
-            // Publish podcast post
-            winston.info(' -- Publishing podcast post.');
-            let succeeded = await wp.publishPodcast(podcastPost, req.session.accessToken);
-
-            // Respond to response
-            if (helpers.isDefined(succeeded)) {
-                // Set notice
-                helpers.setNotice(res, 'Podcast episode published & posted!');
-                // Respond
-                winston.info(' -- Success.');
-                res.status(200).send({ redirectTo: '/podcasts' });
             } else {
-                // Set notice
-                helpers.setNotice(res, 'There was an error posting the podcast episode.');
-                // Return error
-                winston.warn(' -- FAILURE.');
-                res.redirect('back', 500, { title: 'New Podcast', authorized: true });
+                throw new Error('Feed could not be updated.');
             }
         } else {
-            // Set notice
-            helpers.setNotice(res, 'Podcast episode published!');
-            // Respond
-            winston.info(' -- Success.');
-            res.status(200).send({ redirectTo: '/podcasts' });
+            throw new Error('Feed could not be backed up.');
         }
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-        // Delete file
-        if (!fileDeleted) await unlink(req.file.path);
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error
@@ -339,11 +188,9 @@ exports.podcastsEdit = async (req, res) => {
       // Get live feed
       winston.info(' -- Getting live feed.');
       let result = await retrieve_feed(true);
-
       // Parse posts
       winston.info(' -- Parsing items.');
       let items = parsePodcast(result);
-
       // Render page
       winston.info(' -- Rendering page.');
       res.render('./podcasts/edit', {
@@ -363,163 +210,192 @@ exports.podcastsEdit = async (req, res) => {
 };
 
 exports.podcastsUpdate = async (req, res) => {
-    const unlink = util.promisify(fs.unlink);
-    let fileDeleted = true;
-
     try {
-        // Process request
-        winston.info(' -- Processing request.');
-        await requestProcessor(req, res);
-
-        // Validate file upload
-        winston.info(' -- Validating request.');
-        if (req.fileValidationError) {
-            // Set notice
-            helpers.setNotice(res, `An error occured: ${req.fileValidationError}`);
-            // Return error
-            return res.redirect('back', 500, { title: 'Edit Podcast', authorized: true });
-        } else if (req.file) {
-            fileDeleted = false;
-        }
-
-        // Back up feed
-        winston.info(' -- Backing up podcast feed.');
-        let backupResponse = await s3.backupFile({
-            Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup',
-            CopySource: process.env.JM_AWS_S3_RSS_BUCKET + '/' + resourceKey,
-            Key: resourceKey.split('.').join('-' + Date.now() + '.')
-        });
-
+        // Backup feed
+        let backupResponse = await backupFeed(res);
         // Validate backup response
         winston.info(' -- Validating backup.');
-        if (backupResponse.$response.httpResponse.statusCode !== 200) {
-            // Set notice
-            helpers.setNotice(res, 'There was an error backing up the feed');
-            // Return error
-            return res.redirect('back', 500, { title: 'Edit Podcast', authorized: true });
-        }
-
-        let length = null;
-        let duration = null;
-        let s3URL = null;
-
-        if (!fileDeleted) {
-            // Create file stream
-            winston.info(' -- Reading podcast file stream.');
-            var fileStream = fs.createReadStream(req.file.path);
-            fileStream.on('error', function(err) {
-                winston.warn('File Error', err);
-            });
-
-            // Upload file
-            winston.info(' -- Uploading podcast file.');
-            let uploadResponse = await s3.submitS3File({
-                Bucket: process.env.JM_AWS_S3_FILE_BUCKET + '/' + podcastFilesFolder,
-                Key: req.file.filename,
-                Body: fileStream,
-                ACL: 'public-read'
-            });
-
-            length = req.body.length;
-            duration = req.body.duration;
-            s3URL = uploadResponse.Location;
-
-            // Delete file
-            winston.info(' -- Deleting temp file.');
-            await unlink(req.file.path);
-
-            fileDeleted = true;
-        }
-
-        // Validate form data
-        winston.info(' -- Parsing form data.');
-
-        // Set properties
-        let title = helpers.sanitize(req.body.title);
-        let description = helpers.clearHTMLStyles(helpers.sanitize(req.body.description));
-        
-        let tags = [];
-        let keywords = [];
-
-        try {
-            tags = JSON.parse(req.body.keywords);    
-            keywords = tags.map(tag => tag.value);
-        } catch (err) {
-            winston.warn(' -- Tags could not be processed.' + err.message);
-        }
-
-        let season = req.body.season;
-        let episode = req.body.episode;
-        let explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
-
-        // Get live feed
-        winston.info(' -- Getting live feed.');
-        let result = await retrieve_feed(true);
-
-        // Update feed item
-        winston.info(' -- Updating feed item.');
-        let updated_items = 
-            result.rss.channel.item.map((item) => {
-                if (new Podcast(item).id == req.body.id) {
-                    item['title'] = helpers.comply(title);
-                    item['description'] = helpers.comply(description);
-                    item['content:encoded'] = helpers.comply(description),
-                    item['itunes:keywords'] = helpers.comply(keywords);
-                    item['itunes:season'] = season;
-                    item['itunes:episode'] = episode;
-                    item['itunes:explicit'] = explicit;
-
-                    if (!fileDeleted) {
-                        item['enclosure'] = {
-                            $: {
-                                url: s3URL,
-                                length: Math.trunc(length),
-                                type: 'audio/mpeg'
-                            }
-                        };
-                        item['itunes:duration'] = duration;
-                    }
-                }
-
-                return item;
-            });
-        
-        result.rss.channel.item = updated_items;
-
-        // Publish feed update
-        winston.info(' -- Publishing feed updates.');
-        let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_RSS_BUCKET,
-            Key: resourceKey,
-            Body: xml.jsonToXML(result),
-            ACL: 'public-read'
-        });
-
-        // Respond to response
-        if (helpers.isDefined(feedResponse)) {
-            // Set notice
-            helpers.setNotice(res, 'Podcast episode updated!');
-            // Respond
-            winston.info(' -- Success.');
-            res.status(200).send({ redirectTo: '/podcasts' });
+        if (helpers.isDefined(backupResponse) && backupResponse.$response.httpResponse.statusCode === 200) {
+            // Validate form data
+            winston.info(' -- Parsing form data.');
+            // Create feed object
+            let data = new Feed(req);
+            // Get live feed
+            winston.info(' -- Getting live feed.');
+            let feed = await retrieve_feed(true);
+            // Update feed items
+            let updated_items = updateFeedItems(data, feed, req.body.id);
+            // Apply update
+            feed.rss.channel.item = updated_items;
+            // Update feed
+            let feedResponse = await updateFeed(feed);
+            // Respond to response
+            if (helpers.isDefined(feedResponse)) {
+                // Set notice
+                helpers.setNotice(res, 'Podcast episode updated!');
+                // Respond
+                winston.info(' -- Success.');
+                res.status(200).send({ redirectTo: '/podcasts' });
+            } else {
+                throw new Error('Feed could not be updated.');
+            }
         } else {
-            // Set notice
-            helpers.setNotice(res, 'There was an error updating the podcast episode.');
-            // Return error
-            winston.warn(' -- FAILURE.');
-            res.redirect('back', 500, { title: 'Edit Podcast', authorized: true });
+            throw new Error('Feed could not be backed up.');
         }
     } catch (err) {
         // Log error message
         winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-        // Delete file
-        if (!fileDeleted) await unlink(req.file.path);
         // Set notice
         helpers.setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Edit Podcast', authorized: true });
     }
 };
+
+var backupFeed = async (res) => {
+    // Back up feed
+    winston.info(' -- Backing up podcast feed.');
+    let response = await s3.backupFile({
+        Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup',
+        CopySource: process.env.JM_AWS_S3_RSS_BUCKET + '/' + resourceKey,
+        Key: resourceKey.split('.').join('-' + Date.now() + '.')
+    });
+
+    return response;
+}
+
+var createFeedItem = (data, pubDate) => {
+    // Create feed item
+    winston.info(' -- Creating feed item.');
+    let item = {
+        title: helpers.comply(data.title),
+        'itunes:title': helpers.comply(data.title),
+        'pubDate': [pubDate],
+        'guid': {
+            $: {
+                'isPermaLink': 'true'
+            },
+            '_': data.location
+        },
+        'link': data.post_url,
+        'itunes:image': {
+            $: {
+                href: podcastImageURL
+            }
+        },
+        description: helpers.comply(data.description),
+        'content:encoded': helpers.comply(data.description),
+        'enclosure': {
+            $: {
+                url: data.location,
+                length: Math.trunc(data.length),
+                type: 'audio/mpeg'
+            }
+        },
+        'itunes:duration': data.duration,
+        'itunes:explicit': data.explicit,
+        'itunes:keywords': data.keywords.map(keyword => helpers.comply(keyword)).join(', '),
+        'itunes:season': data.season,
+        'itunes:episode': data.episode,
+        'itunes:episodeType': 'Full',
+        'itunes:author': 'A Journey for Wisdom'
+    };
+
+    return item;
+}
+
+var updateFeedItems = (data, feed, id) => {
+    // Update feed item
+    winston.info(' -- Updating feed item.');
+    let updated_items = feed.rss.channel.item.map((item) => {
+        if (new Podcast(item).id == id) {
+            item['title'] = helpers.comply(data.title);
+            item['description'] = helpers.comply(data.description);
+            item['content:encoded'] = helpers.comply(data.description),
+            item['itunes:keywords'] = data.keywords.map(keyword => helpers.comply(keyword)).join(', ');
+            item['itunes:season'] = data.season;
+            item['itunes:episode'] = data.episode;
+            item['itunes:explicit'] = data.explicit;
+            item['enclosure'] = {
+                $: {
+                    url: data.location,
+                    length: Math.trunc(data.length),
+                    type: 'audio/mpeg'
+                }
+            };
+            item['itunes:duration'] = data.duration;
+        }
+
+        return item;
+    });
+
+    return updated_items;
+}
+
+var createPostItem = async (req, data, pubDate) => {
+    // Get size
+    let size = req.body.length / 1000000;
+    // Publish podcast tags
+    winston.info(' -- Publishing podcast tags');
+    let tag_ids = [];
+    // Create tags
+    try {
+        tag_ids = await createTags(data.tags, req.session.accessToken);
+    } catch (error) {
+        winston.warn(' -- Tags not posted.' + error.message);
+    }
+    // Create podcast post
+    winston.info(' -- Creating podcast post');
+    let description_clean = helpers.stripHTML(data.description);
+    description_clean = description_clean.length > 250 ? description_clean.slice(0, 250) + '...' : description_clean;
+    // Calculate GMT date
+    let pubDateGMT = moment(pubDate.toDate().toLocaleString("en-US", { timeZone: "GMT" }));
+    let pubDateShortStr = pubDate.format('YYYY-M-DTHH:mm:ss');
+    let pubDateShortGMTStr = pubDateGMT.format('YYYY-M-DTHH:mm:ss');
+    // Create post item
+    let postItem = {
+        slug: data.postSlug,
+        status: 'future',
+        title: data.title,
+        content: data.description + helpers.podcastFooter(),
+        author: req.session.profile.id,
+        excerpt: description_clean,
+        featured_media: 6121, /* PODCAST IMAGE ID */
+        series: 61, /* PODCAST SERIES ID */
+        comment_status: 'open',
+        tags: tag_ids,
+        date: pubDateShortStr,
+        date_gmt: pubDateShortGMTStr,
+        meta: {
+            audio_file: data.location,
+            date_recorded: pubDate.format("DD-MM-yyyy"),
+            duration: data.duration,
+            episode_type: 'audio',
+            explicit: data.explicit,
+            filesize: Math.trunc(size) + ' Mb',
+            itunes_episode_number: data.episode,
+            itunes_episode_type: 'full',
+            itunes_season_number: data.season,
+            itunes_title: data.title,
+            cover_image_id: 6229
+        }
+    }
+
+    return postItem;
+}
+
+var updateFeed = async (feed) => {
+    // Publish feed update
+    winston.info(' -- Publishing feed updates.');
+    let response = await s3.submitS3File({
+        Bucket: process.env.JM_AWS_S3_RSS_BUCKET,
+        Key: resourceKey,
+        Body: xml.jsonToXML(feed),
+        ACL: 'public-read'
+    });
+
+    return response;
+}
 
 var parsePodcast = (result) => {
     return result.rss.channel.item.map(item => new Podcast(item));
@@ -566,20 +442,4 @@ var retrieve_feed = async (fresh=false) => {
     }
     // Return feed data 
     return feed_cache;
-}
-
-var retrieve_season_data = async (req) => {
-    try {
-        // Retrieve feed data
-        let result = await retrieve_feed(refresh_cookie(req));
-
-        let items = result.rss.channel.item;
-
-        let current_season = Math.max.apply(Math, items.map(x => parseInt(x['itunes:season'])).filter(Number));
-        let current_episode = Math.max.apply(Math, items.filter(x => parseInt(x['itunes:season']) == current_season && helpers.isStrEq(x['itunes:episodeType'], 'full')).map(x => parseInt(x['itunes:episode'])).filter(Number));
-
-        return { season: current_season, episode: current_episode + 1 }
-    } catch (err) {
-        return { season: 1, episode: 1 }
-    }
 }

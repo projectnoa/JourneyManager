@@ -16,10 +16,13 @@ function Podcast(item) {
     this.episode = getVal(item, 'itunes:episode');
     this.season = getVal(item, 'itunes:season');
     this.type = getVal(item, 'itunes:episodeType');
+    // this.image = item._embedded["wp:featuredmedia"][0].source_url || null;
 };
 
 var getVal = (item, property) => {
     let val = (item[property] || ['']);
+
+    if (Array.isArray(val)) return val.join(',');
 
     if (typeof val == 'object') val = val['_'];
 

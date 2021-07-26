@@ -32,6 +32,15 @@ exports.getPosts = (token, page=1) => {
     .get()
 }
 
+exports.getPodcasts = (token) => {
+    // Publish podcast episode
+    return wp.podcasts().embed()
+    .perPage(2)
+    .page(1)
+    .setHeaders( 'Authorization', 'Bearer ' + token )
+    .get()
+}
+
 exports.publishPodcast = (item, token) => {
     // Publish podcast episode
     return wp.podcasts()

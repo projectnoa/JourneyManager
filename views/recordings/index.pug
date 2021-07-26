@@ -1,0 +1,84 @@
+extends ../layout
+
+block head-content
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.js", integrity="sha512-9WciDs0XP20sojTJ9E7mChDXy6pcO0qHpwbEJID1YVavz2H6QBz5eLoDD8lseZOb2yGT8xDNIV7HIe1ZbuiDWg==", crossorigin="anonymous")
+  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.css", integrity="sha512-bbUR1MeyQAnEuvdmss7V2LclMzO+R9BzRntEE57WIKInFVQjvX7l7QZSxjNDt8bg41Ww05oHSh0ycKFijqD7dA==", crossorigin="anonymous")
+
+  link(rel="stylesheet" href="/css/recordings.css")
+  script(src="/js/recordings.js")
+
+  meta(name="page-id", content="recordings")
+
+block layout-content
+
+  -var newSeason = items.length + 1
+
+  //- Create collection modal 
+  div.modal.fade(id='createCollection', data-behavior='create-collection-modal', tabIndex='-1', role='dialog', aria-labelledby='createCollectionTitle', aria-hidden=true)
+    div.modal-dialog.modal-dialog-centered(role='document')
+      div.modal-content
+        div.modal-header
+          div.modal-title=`Do you want to start season ${newSeason}?`
+        div.modal-body
+          form(action="/recordings/season", method="post")
+            input(type="hidden", name="season", value=newSeason)
+        div.modal-footer
+          button.btn.btn-primary(data-dismiss='modal', data-behavior='submit') Yes
+          button.btn.btn-secondary(data-dismiss='modal') Cancel
+
+  h1.mt-5.text-white.text-center Recordings
+
+  div.row.no-gutters
+    div.col
+      button.btn.btn-sm.text-white.float-right(type="button" data-toggle="modal" data-target="#createCollection")
+        i.fas.fa-plus.fa-2x
+
+  input(type="hidden", name="duration")
+  //- input(type="hidden", name="collection")
+
+  each item in items
+    div.card
+        div.card-header(id=`heading-${item.id}`)
+          div.row.no-gutters
+            div.col
+              h1 Season !{item.season}
+            div.col-auto
+              button.btn.btn-link.p-1.float-right(type='button', data-toggle='collapse', data-target=`#collapse-${item.id}`, aria-expanded='false', aria-controls=item.id)
+                i.fas.fa-angle-down.fa-2x
+        div.collapse(id=`collapse-${item.id}`, aria-labelledby=`heading-${item.id}`)
+          div.card-body
+            div.row.no-gutters.mb-3
+              div.col
+                div.card.dopzone
+                  div.card-body
+                    div.post-recordings.recording-upload.text-primary.font-weight-bold(data-behavior='post-recordings', data-title="Drop recording here", data-id=item.id, data-source=item.title)
+            div.row.no-gutters
+              div.col
+                if item.files
+                  table.table
+                    thead 
+                      tr
+                        th(scope="col") #
+                        th(scope="col") Title
+                        th(scope="col") Size
+                        th(scope="col") Duration
+                        th(scope="col") URL
+                        th(scope="col") Uploaded
+                        th(scope="col") Published
+                        th(scope="col") Action
+                    tbody 
+                      each file in item.files
+                        tr
+                          th(scope="row") !{file.episode}
+                          td !{file.title}
+                          td !{(file.length / 1048576).toFixed(2) + " MB"}
+                          td !{new Date(file.duration * 1000).toISOString().substr(11, 8)}
+                          td !{file.url.substring(file.url.lastIndexOf('/'))}
+                          td !{file.date}
+                          td !{file.pubdate}
+                          - if (file.published)
+                            td 
+                              a.btn.btn-sm.btn-secondary(href=`/podcasts/new?recording=${file.title}&length=${file.length}&duration=${file.duration}&season=${item.season}&episode=${file.episode}&location=${file.url}`) Republish
+                          - else
+                            td 
+                              a.btn.btn-sm.btn-primary(href=`/podcasts/new?recording=${file.title}&length=${file.length}&duration=${file.duration}&season=${item.season}&episode=${file.episode}&location=${file.url}`) Publish

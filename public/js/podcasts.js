@@ -47,45 +47,6 @@ var setupDatepicker = () => {
   });
 };
 
-var setupUploader = () => {
-  // Get File upload element
-  let fileElement = document.querySelector('[data-behavior~="file-upload"]');
-  // Add event listener
-  fileElement.addEventListener('change', event => {
-    let target = event.target;
-    // If files exists
-    if (target.files && target.files[0]) {
-      // Display loading screen
-      displayLoading(true);
-      // Set length (File size in bytes)
-      document.querySelector('input[type="hidden"][name="length"]').value = target.files[0].size;
-      // Initialize file reader
-      let reader = new FileReader();
-      // Set load listener
-      reader.onload = (e) => {
-        // Get data
-        let arrayBuffer = e.target.result;
-        let fileName = target.files[0].name;
-        // Set filename on view
-        target.setAttribute("data-title", fileName);
-        // Create an instance of AudioContext
-        var audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        // Asynchronously decode audio file data contained in an ArrayBuffer.
-        audioContext.decodeAudioData(arrayBuffer, (buffer) => {
-            // Obtain the duration in seconds of the audio file
-            let duration = Math.round(buffer.duration);
-            // Set duration info
-            document.querySelector('input[type="hidden"][name="duration"]').value = duration;
-            // Hide loading screen
-            displayLoading(false);
-        });
-      }
-      // Start file reader as array buffer
-      reader.readAsArrayBuffer(target.files[0]);
-    }
-  });
-};
-
 var setupForm = () => {
   // Get form element
   let formElement = document.querySelector('form');
@@ -96,11 +57,12 @@ var setupForm = () => {
     // If the form is valid
     if ($(target).valid()) {
       // Create form data
-      const formData = new FormData(target);
+      // const formData = new FormData(target);
+      let data = Object.fromEntries(new FormData(target).entries());
       // Make request
       axios.post(
         target.action,
-        formData,
+        data,
         {
             timeout: 300000,
             responseType: 'json'
@@ -224,12 +186,10 @@ function podcastsSetup() {
 
 function newPodcastSetup() {
     setupDatepicker();
-    setupUploader();
     setupForm();
 }
 
 function editPodcastSetup() {
-  setupUploader();
   setupForm();
 }
 

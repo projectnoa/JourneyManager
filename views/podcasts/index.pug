@@ -19,7 +19,10 @@ block layout-content
     -template += "          <tbody>"
     -template += "            <tr>"
     -template += "              <td align=\"center\" style=\"font-family:Verdana,Geneva,sans-serif;font-size:25px;font-weight:bold;color:#333333;line-height:1.3em;padding:15px 0 0 0\">"
-    -template += `                <a href=\"${item.url}\" rel=\"noopener nofollow\" style=\"display:inline-block;font-size:18px;text-decoration:none;line-height:normal!important\" target=\"_blank\">${item.title}</a>`
+    -template += `                <a href=\"${item.url}\" rel=\"noopener nofollow\" style=\"display:inline-block;font-size:18px;text-decoration:none;line-height:normal!important\" target=\"_blank\">`
+    -template += `                  <img src=\"${item.img}\">`
+    -template += `                  ${item.title}`
+    -template += "                </a>"
     -template += "              </td>"
     -template += "            </tr>"
     -template += "            <tr>"

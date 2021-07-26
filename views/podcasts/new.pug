@@ -44,12 +44,12 @@ block layout-content
     div.col-xl-6.offset-xl-3.col-lg-8.offset-lg-2.col-10.offset-1
       div.card.p-3
         div.card-text
-          form(action="/podcasts/create", method="post", enctype="multipart/form-data")
+          form(action="/podcasts/create", method="post")
             div.form-group
-              label.sr-only(for='file') Audio file
-              input.form-control-file.text-primary.font-weight-bold(type="file", name="file", data-title="Drop audio file here", data-behavior='file-upload', required=true)
-              input(type="hidden", name="length")
-              input(type="hidden", name="duration")
+              h2 Publishing !{recording}
+              input(type="hidden", name="location", value=location.replace(/ /ig, '+'))
+              input(type="hidden", name="length", value=length)
+              input(type="hidden", name="duration", value=duration)
             div.form-group
               label(for='title') Title:
               input.form-control(type="text", name="title", placeholder="Enter an episode title", required=true, data-behavior='post-title')

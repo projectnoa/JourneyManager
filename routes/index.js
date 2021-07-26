@@ -10,6 +10,7 @@ const express = require('express');
 const sessionController = require('./../controllers/session');
 const postsController = require('./../controllers/posts');
 const podcastsController = require('./../controllers/podcasts');
+const recordingsController = require('./../controllers/recordings');
 const tweetsController = require('./../controllers/tweets');
 const imagesController = require('./../controllers/images');
 
@@ -46,6 +47,11 @@ router.get('/podcasts/new', sessionController.validateSession, podcastsControlle
 router.post('/podcasts/create', sessionController.validateSession, podcastsController.podcastsCreate);
 router.post('/podcasts/:id/edit', sessionController.validateSession, podcastsController.podcastsEdit);
 router.post('/podcasts/:id/update', sessionController.validateSession, podcastsController.podcastsUpdate);
+
+// Recordings
+router.get('/recordings', sessionController.validateSession, recordingsController.recordingsIndex);
+router.post('/recordings/season', sessionController.validateSession, recordingsController.recordingsCreateSeason);
+router.post('/recordings/create', sessionController.validateSession, recordingsController.recordingsCreateFile);
 
 // Tweets
 router.get('/tweets', sessionController.validateSession, tweetsController.tweetsIndex);
