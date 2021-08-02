@@ -181,7 +181,13 @@ var setupForm = () => {
 };
 
 function podcastsSetup() {
-
+  $('#episode-data').on('show.bs.modal', (event) => {
+    var button = $(event.relatedTarget); // Button that triggered the modal
+    var content = button.data('content'); // Extract info from data-* attributes
+    // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+    // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+    document.querySelector("textarea[name~='episode-data']").value = JSON.stringify(content, null, 4);
+  })
 }
 
 function newPodcastSetup() {

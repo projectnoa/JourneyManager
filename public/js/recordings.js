@@ -36,7 +36,7 @@ var setupUploader = () => {
               var dropzone = document.querySelector('div[data-behavior~="post-recordings"] > div').parentElement;
               dropzone.dataset.title = `Uploading recording ${fileTitle}`;
               // Process queue
-              dropzone.processQueue();
+              Dropzone.forElement(dropzone).processQueue();
             });
           });
           // On file uploading

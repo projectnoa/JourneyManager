@@ -114,9 +114,11 @@ exports.podcastsCreate = async (req, res) => {
         // Validate date data
         winston.info(' -- Parsing date data.');
         // Format Dates (Adjust to PDT)
-        let pubDateObj = new Date(req.body.pubDate + ' PDT');
-        let pubDate = moment(pubDateObj);
-        let pubDateStr = pubDate.format('ddd, D MMM YYYY HH:mm:ss') + ' +0900';
+        let pubDateStr = req.body.pubDate + ':00 PDT';
+        let pubDateLocal = moment(pubDateStr);
+        let pubDateGMT = moment(pubDateLocal.toDate().toLocaleString("en-US", { timeZone: "GMT" }));
+        let pubDateLocalShortStr = pubDateLocal.format('YYYY-M-DTHH:mm:ss');
+        let pubDateGMTShortStr = pubDateGMT.format('YYYY-M-DTHH:mm:ss');
         // Backup feed
         let backupResponse = await backupFeed(res);
         // Validate backup response
@@ -144,7 +146,7 @@ exports.podcastsCreate = async (req, res) => {
                 let publish_post = req.body.post;
                 // If a post is scheduled to be published 
                 if (publish_post === 'true' || publish_post === 'on') {
-                    let postItem = createPostItem(req, feedObj, pubDate);
+                    let postItem = await createPostItem(req, feedItem, pubDateLocalShortStr, pubDateGMTShortStr);
                     // Publish podcast post
                     winston.info(' -- Publishing podcast post.');
                     let succeeded = await wp.publishPodcast(postItem, req.session.accessToken);
@@ -332,7 +334,7 @@ var updateFeedItems = (data, feed, id) => {
     return updated_items;
 }
 
-var createPostItem = async (req, data, pubDate) => {
+var createPostItem = async (req, data, pubDateLocal, pubDateGMT) => {
     // Get size
     let size = req.body.length / 1000000;
     // Publish podcast tags
@@ -348,10 +350,6 @@ var createPostItem = async (req, data, pubDate) => {
     winston.info(' -- Creating podcast post');
     let description_clean = helpers.stripHTML(data.description);
     description_clean = description_clean.length > 250 ? description_clean.slice(0, 250) + '...' : description_clean;
-    // Calculate GMT date
-    let pubDateGMT = moment(pubDate.toDate().toLocaleString("en-US", { timeZone: "GMT" }));
-    let pubDateShortStr = pubDate.format('YYYY-M-DTHH:mm:ss');
-    let pubDateShortGMTStr = pubDateGMT.format('YYYY-M-DTHH:mm:ss');
     // Create post item
     let postItem = {
         slug: data.postSlug,
@@ -364,11 +362,11 @@ var createPostItem = async (req, data, pubDate) => {
         series: 61, /* PODCAST SERIES ID */
         comment_status: 'open',
         tags: tag_ids,
-        date: pubDateShortStr,
-        date_gmt: pubDateShortGMTStr,
+        date: pubDateLocal,
+        date_gmt: pubDateGMT,
         meta: {
             audio_file: data.location,
-            date_recorded: pubDate.format("DD-MM-yyyy"),
+            date_recorded: moment().format("DD-MM-yyyy"),
             duration: data.duration,
             episode_type: 'audio',
             explicit: data.explicit,

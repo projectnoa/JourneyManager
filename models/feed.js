@@ -20,7 +20,7 @@ function Feed(req) {
     // Process post URL
     this.postSlug = '';
     this.post_url = '';
-    if (helpers.isDefined(req.body.posturl) && typeof req.body.posturl == String) {
+    if (helpers.isDefined(req.body.posturl)) {
         this.postSlug = encodeURI(req.body.posturl.trim().toLowerCase().replace(/[^a-z0-9 \-]/g, '').replace(/[^a-z0-9]/g, '-').replace(/--/g, '-'));
         this.post_url = postURL + this.postSlug;
     }
