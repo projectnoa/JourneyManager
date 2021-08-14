@@ -198,7 +198,8 @@ var uploadFile = async (req) => {
         Bucket: process.env.JM_AWS_S3_FILE_BUCKET + '/' + podcastFilesFolder,
         Key: req.file.filename,
         Body: fileStream,
-        ACL: 'public-read'
+        ACL: 'public-read',
+        ContentType: 'audio/mp3'
     });
 
     return uploadResponse;

@@ -53,6 +53,7 @@ block layout-content
             div.form-group
               label(for='title') Title:
               input.form-control(type="text", name="title", placeholder="Enter an episode title", required=true, data-behavior='post-title')
+              small.form-text.text-muted Avoid using (&amp;), (&lt;), (&gt;), (&quot;), and (&apos;)
             div.form-group
               label(for='posturl') Post URL:
               div.row.no-gutters
@@ -63,6 +64,7 @@ block layout-content
             div.form-group
               label(for='description') Description:
               textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=desc_template
+              small.form-text.text-muted Remove all &amp; in URL&apos;s
             div.form-group
               label(for='info') Social links and podcast info:
               span.btn.btn-sm.btn-primary.float-right(data-toggle="collapse", data-target="#collapseInfo", aria-expanded="false", aria-controls="collapseInfo") show
@@ -72,7 +74,7 @@ block layout-content
             div.form-group
               label(for='keywords') Keywords:
               input.form-control(type="text", name="keywords", placeholder="", required=true, data-behavior='keywords')
-              small.form-text.text-muted Example: Mental health, Habits, Success.
+              small.form-text.text-muted Example: Mental health, Habits, Success. Avoid using (&amp;), (&lt;), (&gt;), (&quot;), and (&apos;)
             div.form-group.row.no-gutters
               div.col-auto
                 label(for='season', style='margin-bottom: 0;padding-top: 5px;') Season:
@@ -104,9 +106,6 @@ block layout-content
               div.col-auto
                 div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
                   input.form-control.pubdate(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
-                  //- div.input-group-append(data-target='#datetimepicker', data-toggle='datetimepicker')
-                    span.input-group-text
-                        i.fas.fa-calendar-alt
               div.col-auto 
                 label(style='margin-bottom: 0;padding-top: 7px;') California Time
             div.form-check

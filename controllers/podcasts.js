@@ -25,7 +25,7 @@ const wp = require('./../helpers/wordpress');
 const feedURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/podcast.xml';
 const resourceKey = 'podcast.xml';
 const podcastURL = 'https://s3.us-west-2.amazonaws.com/podcasts.ajourneyforwisdom.com/';
-const podcastImageURL = podcastURL + 'images/DTMG-profile-v3.jpeg';
+const podcastImageURL = podcastURL + 'images/DTMG-profile-v5.jpeg';
 
 var feed_cache = null;
 
@@ -289,7 +289,7 @@ var createFeedItem = (data, pubDate) => {
         'content:encoded': helpers.comply(data.description),
         'enclosure': {
             $: {
-                url: data.location,
+                url: data.track_location,
                 length: Math.trunc(data.length),
                 type: 'audio/mpeg'
             }
@@ -299,7 +299,7 @@ var createFeedItem = (data, pubDate) => {
         'itunes:keywords': data.keywords.map(keyword => helpers.comply(keyword)).join(', '),
         'itunes:season': data.season,
         'itunes:episode': data.episode,
-        'itunes:episodeType': 'Full',
+        'itunes:episodeType': 'full',
         'itunes:author': 'A Journey for Wisdom'
     };
 
@@ -389,7 +389,9 @@ var updateFeed = async (feed) => {
         Bucket: process.env.JM_AWS_S3_RSS_BUCKET,
         Key: resourceKey,
         Body: xml.jsonToXML(feed),
-        ACL: 'public-read'
+        ACL: 'public-read',
+        ContentType: 'application/rss+xml',
+        ContentEncoding: 'UTF-8'
     });
 
     return response;
