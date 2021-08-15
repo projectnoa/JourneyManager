@@ -115,10 +115,7 @@ exports.podcastsCreate = async (req, res) => {
         winston.info(' -- Parsing date data.');
         // Format Dates (Adjust to PDT)
         let pubDateStr = req.body.pubDate + ':00 PDT';
-        let pubDateLocal = moment(pubDateStr);
-        let pubDateGMT = moment(pubDateLocal.toDate().toLocaleString("en-US", { timeZone: "GMT" }));
-        let pubDateLocalShortStr = pubDateLocal.format('YYYY-M-DTHH:mm:ss');
-        let pubDateGMTShortStr = pubDateGMT.format('YYYY-M-DTHH:mm:ss');
+        let pubDateLocalStr = moment(pubDateStr).format('YYYY-MM-DTHH:mm:ss');
         // Backup feed
         let backupResponse = await backupFeed(res);
         // Validate backup response
@@ -146,7 +143,7 @@ exports.podcastsCreate = async (req, res) => {
                 let publish_post = req.body.post;
                 // If a post is scheduled to be published 
                 if (publish_post === 'true' || publish_post === 'on') {
-                    let postItem = await createPostItem(req, feedItem, pubDateLocalShortStr, pubDateGMTShortStr);
+                    let postItem = await createPostItem(req, feedItem, pubDateLocalStr);
                     // Publish podcast post
                     winston.info(' -- Publishing podcast post.');
                     let succeeded = await wp.publishPodcast(postItem, req.session.accessToken);
@@ -334,7 +331,7 @@ var updateFeedItems = (data, feed, id) => {
     return updated_items;
 }
 
-var createPostItem = async (req, data, pubDateLocal, pubDateGMT) => {
+var createPostItem = async (req, data, pubDate) => {
     // Get size
     let size = req.body.length / 1000000;
     // Publish podcast tags
@@ -362,8 +359,7 @@ var createPostItem = async (req, data, pubDateLocal, pubDateGMT) => {
         series: 61, /* PODCAST SERIES ID */
         comment_status: 'open',
         tags: tag_ids,
-        date: pubDateLocal,
-        date_gmt: pubDateGMT,
+        date: pubDate,
         meta: {
             audio_file: data.location,
             date_recorded: moment().format("DD-MM-yyyy"),
