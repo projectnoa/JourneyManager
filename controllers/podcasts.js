@@ -371,7 +371,7 @@ var createPostItem = async (req, data, pubDate) => {
             itunes_episode_type: 'full',
             itunes_season_number: data.season,
             itunes_title: data.title,
-            cover_image_id: 6229
+            cover_image_id: '6229'
         }
     }
 
