@@ -143,7 +143,7 @@ exports.podcastsCreate = async (req, res) => {
                 let publish_post = req.body.post;
                 // If a post is scheduled to be published 
                 if (publish_post === 'true' || publish_post === 'on') {
-                    let postItem = await createPostItem(req, feedItem, pubDateLocalStr);
+                    let postItem = await createPostItem(req, data, pubDateLocalStr);
                     // Publish podcast post
                     winston.info(' -- Publishing podcast post.');
                     let succeeded = await wp.publishPodcast(postItem, req.session.accessToken);
@@ -365,7 +365,7 @@ var createPostItem = async (req, data, pubDate) => {
             date_recorded: moment().format("DD-MM-yyyy"),
             duration: data.duration,
             episode_type: 'audio',
-            explicit: data.explicit,
+            explicit: data.explicit === 'yes' ? true : false,
             filesize: Math.trunc(size) + ' Mb',
             itunes_episode_number: data.episode,
             itunes_episode_type: 'full',

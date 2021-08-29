@@ -46,7 +46,7 @@ exports.recordingsIndex = async (req, res) => {
         // Get published list
         let podcast = await fetcher(podcastURL);
         // Parse published list
-        let published = podcast.rss.channel.item.map(item => ( { url: item.enclosure.$.url, pubdate: item.pubDate } ));
+        let published = podcast.rss.channel.item.map(item => ( { url: item.guid._, pubdate: item.pubDate } ));
         // Parse recordings
         let items = parseRecordings(feed, published);
         // Render page
