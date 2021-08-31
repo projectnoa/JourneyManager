@@ -307,12 +307,15 @@ exports.imagesCollectionDestroy = async (req, res) => {
 
         // Delete every image on collection
         winston.info(' -- Deleting images in collection.');
-        if (collection.image !== undefined) {
+        if (Array.isArray(collection.image)) {
             // Delete every image on collection
             for (const image of collection.image) {
                 const key = image.$.title;
                 await removeImage(key, source);
             }
+        } else if (collection.image !== null) {
+            const key = collection.image.$.title;
+            await removeImage(key, source);
         }
 
         // Exclude collection
@@ -360,26 +363,32 @@ exports.imagesImageDestroy = async (req, res) => {
         winston.info(' -- Deleting image file.');
         let response = await removeImage(key, source);
 
-        // Get live feed
-        winston.info(' -- Getting live feed.');
-        let result = await fetcher(feedURL[source]);
+        if (response.$response.httpResponse.statusCode === 204) {
+            // Get live feed
+            winston.info(' -- Getting live feed.');
+            let result = await fetcher(feedURL[source]);
 
-        // Filter item
-        winston.info(' -- Filtering image feed.');
-        let updatedResult = updateCollection(result, collection_id, (element) => {
-            element.image = element.image.filter(item => item.$.id !== id);
+            // Filter item
+            winston.info(' -- Filtering image feed.');
+            let updatedResult = updateCollection(result, collection_id, (collection) => {
+                if (Array.isArray(collection.image)) {
+                    collection.image = collection.image.filter(item => item.$.id !== id);
+                } else if (collection.image.$.id === id) {
+                    collection.image = [];
+                }
+                
+                return collection;
+            });
 
-            return element;
-        });
-
-        // Publish feed update
-        winston.info(' -- Publishing feed updates.');
-        let feedResponse = await s3.submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
-            Key: resourceKey,
-            Body: xml.jsonToXML(updatedResult),
-            ACL: 'public-read'
-        });
+            // Publish feed update
+            winston.info(' -- Publishing feed updates.');
+            let feedResponse = await s3.submitS3File({
+                Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
+                Key: resourceKey,
+                Body: xml.jsonToXML(updatedResult),
+                ACL: 'public-read'
+            });
+        }
 
         // Set notice
         helpers.setNotice(res, 'Image deleted!');
