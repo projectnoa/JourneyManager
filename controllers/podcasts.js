@@ -135,7 +135,7 @@ exports.podcastsCreate = async (req, res) => {
             feed.rss.channel.pubDate = pubDateStr;
             feed.rss.channel.lastBuildDate = pubDateStr;
             // Update feed 
-            let feedResponse = 'true';//await updateFeed(feed);
+            let feedResponse = await updateFeed(feed);
             // Validate feed response
             winston.info(' -- Validating feed update.');
             if (helpers.isDefined(feedResponse)) {
