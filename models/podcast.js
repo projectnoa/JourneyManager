@@ -16,6 +16,7 @@ function Podcast(item) {
     this.episode = getVal(item, 'itunes:episode');
     this.season = getVal(item, 'itunes:season');
     this.type = getVal(item, 'itunes:episodeType');
+    this.length = item['enclosure']['$']['length'];
     // this.image = item._embedded["wp:featuredmedia"][0].source_url || null;
 
     this.raw = JSON.stringify(item);

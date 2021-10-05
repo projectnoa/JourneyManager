@@ -115,7 +115,7 @@ exports.podcastsCreate = async (req, res) => {
         winston.info(' -- Parsing date data.');
         // Format Dates (Adjust to PDT)
         let pubDateStr = req.body.pubDate + ':00 PDT';
-        let pubDateLocalStr = moment(pubDateStr).format('YYYY-MM-DTHH:mm:ss');
+        let pubDateLocalStr = moment(pubDateStr).format('YYYY-MM-DDTHH:MM:SS');
         // Backup feed
         let backupResponse = await backupFeed(res);
         // Validate backup response
@@ -190,13 +190,28 @@ exports.podcastsEdit = async (req, res) => {
       // Parse posts
       winston.info(' -- Parsing items.');
       let items = parsePodcast(result);
+
+      let item = items.find(i => i.id == id);
+
+      let recording = item.title;
+      let location = item.url;
+      let length = item.length;
+      let duration = item.duration;
+      let season = item.season;
+      let episode = item.episode;
       // Render page
       winston.info(' -- Rendering page.');
       res.render('./podcasts/edit', {
           title: 'Edit episode',
-          authorized: true,
           item: items.find(i => i.id == id),
-          entity: 'podcast'
+          entity: 'podcast',
+          season: season, 
+          episode: episode, 
+          authorized: true,
+          recording: recording,
+          location: location,
+          length: length,
+          duration: duration
       });
   } catch (err) {
       // Log error message
@@ -317,7 +332,7 @@ var updateFeedItems = (data, feed, id) => {
             item['itunes:explicit'] = data.explicit;
             item['enclosure'] = {
                 $: {
-                    url: data.location,
+                    url: data.track_location,
                     length: Math.trunc(data.length),
                     type: 'audio/mpeg'
                 }
@@ -364,14 +379,14 @@ var createPostItem = async (req, data, pubDate) => {
             audio_file: data.location,
             date_recorded: moment().format("DD-MM-yyyy"),
             duration: data.duration,
-            episode_type: 'audio',
-            explicit: data.explicit === 'yes' ? true : false,
-            filesize: Math.trunc(size) + ' Mb',
+            episode_type: "audio",
+            explicit: data.explicit === 'yes' ? "true" : "false",
+            filesize: Math.trunc(size) + " Mb",
             itunes_episode_number: data.episode,
-            itunes_episode_type: 'full',
+            itunes_episode_type: "full",
             itunes_season_number: data.season,
             itunes_title: data.title,
-            cover_image_id: '6229'
+            cover_image_id: "6229"
         }
     }
 
