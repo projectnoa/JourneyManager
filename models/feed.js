@@ -17,7 +17,7 @@ function Feed(req) {
     this.length = req.body.length;
     this.duration = req.body.duration;
     this.location = req.body.location;
-    this.track_location = req.body.location.replace('https://', 'https://dts.podtrac.com/redirect.mp3/');
+    this.track_location = req.body.location.replace('https://', 'https://chrt.fm/track/3AFA92/dts.podtrac.com/redirect.mp3/');
     // Process post URL
     this.postSlug = '';
     this.post_url = '';
