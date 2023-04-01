@@ -163,7 +163,6 @@ export async function podcastsCreate(req, res) {
       res.redirect('back', 500, { title: 'New Podcast', authorized: true });
     }
 }
-  
 
 export async function podcastsEdit(req, res) {
   let id = req.body.id;

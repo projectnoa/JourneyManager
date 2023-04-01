@@ -68,11 +68,12 @@ block layout-content
       button.btn.btn-sm.text-white(data-toggle='modal' data-target='#newsletter-html')
         i.far.fa-file-alt.fa-2x
     div.col-auto
-      button.btn.btn-sm.text-white(onclick='refreshPage();')
+      button.btn.btn-sm.text-white(data-behavior='refresh')
         i.fas.fa-sync.fa-2x
     div.col-auto
-      a.btn.btn-sm.text-white.float-right(href='/podcasts/new')
-        i.fas.fa-plus.fa-2x
+      a.btn.btn-primary.text-white.float-right(href='/recordings') New Episode
+
+  br
 
   each item in items
     div.row.no-gutters

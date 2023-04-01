@@ -124,6 +124,8 @@ function podcastsSetup() {
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     document.querySelector("textarea[name~='episode-data']").value = JSON.stringify(content, null, 4);
   })
+
+  document.querySelector('button[data-behavior~="refresh"]').addEventListener('click', refreshPage);
 }
 
 function newPodcastSetup() {
