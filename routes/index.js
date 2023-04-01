@@ -11,7 +11,6 @@ import { validateSession } from './../controllers/session.js';
 import { postsIndex, postsNew, postsCreate, tagsSearch } from './../controllers/posts.js';
 import { podcastsIndex, podcastsNew, podcastsCreate, podcastsEdit, podcastsUpdate } from './../controllers/podcasts.js';
 import { recordingsIndex, recordingsCreateSeason, recordingsCreateFile } from './../controllers/recordings.js';
-import { tweetsIndex, tweetsNew, tweetsCreate, tweetsEdit, tweetsUpdate, tweetsDestroy } from './../controllers/tweets.js';
 import { imagesIndex, imagesNew, imagesCreateCollection, imagesCreateImage, imagesProcess, imagesCollectionDestroy, imagesImageDestroy } from './../controllers/images.js';
 
 /**
@@ -52,14 +51,6 @@ router.post('/podcasts/:id/update', validateSession, podcastsUpdate);
 router.get('/recordings', validateSession, recordingsIndex);
 router.post('/recordings/season', validateSession, recordingsCreateSeason);
 router.post('/recordings/create', validateSession, recordingsCreateFile);
-
-// Tweets
-router.get('/tweets', validateSession, tweetsIndex);
-router.get('/tweets/new', validateSession, tweetsNew);
-router.post('/tweets/create', validateSession, tweetsCreate);
-router.post('/tweets/:id/edit', validateSession, tweetsEdit);
-router.post('/tweets/:id/update', validateSession, tweetsUpdate);
-router.post('/tweets/:id/delete', validateSession, tweetsDestroy);
 
 // Images
 router.get('/images', validateSession, imagesIndex);

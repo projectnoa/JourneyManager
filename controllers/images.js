@@ -9,8 +9,7 @@ import { promisify } from 'util';
 import { unlink as _unlink, unlinkSync, createReadStream } from 'fs';
 import { basename } from "path";
 
-import pkg from 'jimp';
-const { read } = pkg;
+import jimp from 'jimp';
 
 import sizeOf from 'image-size';
 
@@ -169,7 +168,7 @@ export async function imagesCreateImage(req, res) {
 
         // Compressing image
         info(' -- Compressing images.');
-        let jimpImg = await read(req.file.path);
+        let jimpImg = await jimp.read(req.file.path);
         jimpImg.quality(60);
         await jimpImg.writeAsync(req.file.path);
 
@@ -247,7 +246,7 @@ export async function imagesProcess(req, res) {
 
         // Compressing image
         info(' -- Compressing images.');
-        let jimpImg = await read(req.file.path);
+        let jimpImg = await jimp.read(req.file.path);
         jimpImg.quality(60);
         await jimpImg.writeAsync(req.file.path);
 
