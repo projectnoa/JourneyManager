@@ -58,7 +58,17 @@ let setupUploader = () => {
         }
     };
     // Set dropzone
-    let dz = new Dropzone(dropzoneElement, config);
+    new Dropzone(dropzoneElement, config)
+    .on("sending", (file, xhr, formData) => {
+      // Will send the filesize along with the file as POST data.
+      formData.append("filesize", file.size);
+
+      // Display loading screen
+      displayLoading(true);
+    }).on("complete", (file, event) => {
+        // Display loading screen
+        displayLoading(false);
+    });
     // Mark as initialized
     dropzoneElement.dataset.initialized = true;
   });

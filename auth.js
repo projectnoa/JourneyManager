@@ -6,8 +6,6 @@
 
 import passport from 'passport';
 
-// import WordpressStrategy from 'passport-wordpress';
-
 import WordPressStrategy from './auth-strategy.js';
 
 /**
@@ -21,22 +19,6 @@ passport.serializeUser(function(user, cb) {
 passport.deserializeUser(function(obj, cb) {
     cb(null, obj);
 });
-
-// passport.use(new WordpressStrategy({
-//     clientID: process.env.JM_WP_AUTH_ID,
-//     clientSecret: process.env.JM_WP_AUTH_SEC,
-//     wordpressUrl: process.env.JM_WP_ENDPOINT,
-//     callbackURL: process.env.JM_DOMAIN + '/auth/wordpress/callback'
-//   },
-//   function(accessToken, refreshToken, profile, done) {
-//     // store tokens in session
-//     req.session.accessToken = accessToken; 
-//     req.session.refreshToken = refreshToken;
-//     req.session.profile = profile;
-//     // Continue to router 
-//     return done(null, profile);
-//   }
-// ));
 
 passport.use(new WordPressStrategy({
     clientID: process.env.JM_WP_AUTH_ID,
