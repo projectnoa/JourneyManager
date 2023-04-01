@@ -1,144 +1,95 @@
 
-const urlRegex = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
-const hashtagRegex = /(^|\s)(#[a-z\d-]+)/ig
+const urlRegex = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+const hashtagRegex = /(^|\s)(#[a-z\d-]+)/ig;
 
 function highlightURL(text) {
-    return text.replace(urlRegex, '<em class="url">$&</em>');
+  return text.replace(urlRegex, '<em class="url">$&</em>');
 }
 
 function highlightHashtag(text) {
-    return text.replace(hashtagRegex, '<em class="hashtag">$&</em>');
+  return text.replace(hashtagRegex, '<em class="hashtag">$&</em>');
 }
 
 function checkForNotice() {
-    // Get element
-    let notice = getCookie('_JourneyManager_notice');
-    // Check if any notice is set
-    if (isDefined(notice) && notice.length > 0) {
-        // Display notice
-        displayNotice(notice);
-    }
+  const notice = getCookie('_JourneyManager_notice');
+  if (isDefined(notice) && notice.length > 0) displayNotice(notice);
 }
 
 function getCookie(cname) {
-    const name = cname + "=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const ca = decodedCookie.split(';');
+  const name = cname + "=";
+  const decodedCookie = decodeURIComponent(document.cookie);
+  const ca = decodedCookie.split(';');
 
-    for(const element of ca) {
-      let c = element;
-
-      while (c.charAt(0) == ' ') {
-        c = c.substring(1);
-      }
-
-      if (c.indexOf(name) == 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    
-    return "";
+  for (const element of ca) {
+    let c = element.trim();
+    if (c.startsWith(name)) return c.substring(name.length);
+  }
+  
+  return "";
 }
 
 function setNoticeBehavior() {
-    // Get elements
-    let elements = document.querySelectorAll('[data-behavior~="display-notice"]');
-    // Add event listeners
-    elements.forEach(element => {
-        element.addEventListener('click', (event) => {
-            // Get element
-            let target = event.target;
-            // Get text
-            let text = target.dataset.text;
-            // Display notice
-            displayNotice(text);
-        });
+  const elements = document.querySelectorAll('[data-behavior~="display-notice"]');
+  elements.forEach(element => {
+    element.addEventListener('click', event => {
+      const text = event.target.dataset.text;
+      displayNotice(text);
     });
+  });
 }
 
 function setDeleteBehavior() {
-    let elements = document.querySelectorAll('[data-behavior~="delete"]');
+  const elements = document.querySelectorAll('[data-behavior~="delete"]');
+  elements.forEach(element =>
+    element.addEventListener('click', event => {
+      const target = event.target;
+      const action = target.dataset.action;
+      const message = target.dataset.message;
 
-    elements.forEach(element =>
-        element.addEventListener('click', (event) => {
-            let target = event.target;
-
-            let action = target.dataset.action;
-            let message = target.dataset.message;
-
-            displayConfirm(message, () => {
-                axios.post(action)
-                .then(response => {
-                    console.log(response);
-                })
-                .catch(error => {
-                    console.log(error);
-                });
-            });
-        }, false)
-    );
+      displayConfirm(message, () => {
+        axios.post(action)
+          .then(response => console.log(response))
+          .catch(error => console.log(error));
+      });
+    }, false)
+  );
 }
 
 function setConfirmBehavior() {
-    // Get elements
-    let elements = document.querySelectorAll('[data-behavior~="display-confirm"]');
-    // Add event listeners
-    elements.forEach(element => {
-        element.addEventListener('click', (event) => {
-            // Get element
-            let target = event.target;
-            // Get text
-            let text = target.dataset.text;
-            // Get confirm target
-            let form = target.dataset.target;
-            // Display confirm
-            displayConfirm(text, () => {
-                // Trigger submit event
-                document.querySelector("[data-id~='" + form + "']").submit();
-            });
-        });
+  const elements = document.querySelectorAll('[data-behavior~="display-confirm"]');
+  elements.forEach(element => {
+    element.addEventListener('click', event => {
+      const target = event.target;
+      const text = target.dataset.text;
+      const form = target.dataset.target;
+
+      displayConfirm(text, () => {
+        document.querySelector(`[data-id~='${form}']`).submit();
+      });
     });
+  });
 }
 
 function displayNotice(text) {
-    // Get element
-    let modal = document.querySelector('div[data-behavior~="notice-modal"]');
-    // Set text
-    modal.querySelector('.modal-body').innerHTML = text;
-    // Display modal
-    $(modal).modal('show');
+  const modal = document.querySelector('div[data-behavior~="notice-modal"]');
+  modal.querySelector('.modal-body').innerHTML = text;
+  $(modal).modal('show');
 }
 
 function displayConfirm(text, callback) {
-    // Get element
-    let modal = document.querySelector('div[data-behavior~="confirm-modal"]');
-    // Set text
-    modal.querySelector('.modal-body').innerHTML = text;
-    // Display modal
-    $(modal).modal('show');
-    // Add event listener
-    let confirmAction = modal.querySelector('button[data-behavior~="confirmed"]');
-    confirmAction.addEventListener('click', (event) => {
-        // Get element
-        let target = event.target;
-        // Run callback
-        callback(target);
-    });
+  const modal = document.querySelector('div[data-behavior~="confirm-modal"]');
+  modal.querySelector('.modal-body').innerHTML = text;
+  $(modal).modal('show');
+
+  const confirmAction = modal.querySelector('button[data-behavior~="confirmed"]');
+  confirmAction.addEventListener('click', event => callback(event.target));
 }
 
 function displayLoading(show) {
-    // Get loading screen
-    let screen = document.querySelector('div[data-behavior="loading-screen"]');
-
-    if (show) {
-        // Display loading screen
-        screen.classList.remove('d-none');
-    } else {
-        // Display loading screen
-        screen.classList.add('d-none');
-    }
+  const screen = document.querySelector('div[data-behavior="loading-screen"]');
+  screen.classList.toggle('d-none', !show);
 }
 
 function isDefined(value) {
-    return (value !== undefined && value !== null);
+  return (value !== undefined && value !== null);
 }

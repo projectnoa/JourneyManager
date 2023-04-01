@@ -1,5 +1,4 @@
 
-
 let setupDatepicker = () => {
   // Get datepicker element
   let datepickerElement = document.querySelector('[data-behavior~="datetime-picker"]');
