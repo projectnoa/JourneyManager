@@ -1,5 +1,5 @@
 
-var setupUploader = () => {
+let setupUploader = () => {
   // Set show collapsible behavior
   $('.collapse').on('show.bs.collapse', (event) => {
       let target = event.target;
@@ -27,13 +27,13 @@ var setupUploader = () => {
           // On file added
           this.on("addedfile", (file) => {
             // Update title
-            var dropzone = file.previewElement.parentElement;
-            var fileTitle = file.name;
+            let dropzone = file.previewElement.parentElement;
+            let fileTitle = file.name;
             dropzone.dataset.title = `Processing recording ${fileTitle}`;
             // Calculate audio duration
             getAudioDuration(file, () => {
               // Update title
-              var dropzone = document.querySelector('div[data-behavior~="post-recordings"] > div').parentElement;
+              let dropzone = document.querySelector('div[data-behavior~="post-recordings"] > div').parentElement;
               dropzone.dataset.title = `Uploading recording ${fileTitle}`;
               // Process queue
               Dropzone.forElement(dropzone).processQueue();
@@ -58,7 +58,7 @@ var setupUploader = () => {
         }
     };
     // Set dropzone
-    new Dropzone(dropzoneElement, config);
+    let dz = new Dropzone(dropzoneElement, config);
     // Mark as initialized
     dropzoneElement.dataset.initialized = true;
   });
@@ -73,7 +73,7 @@ var setupUploader = () => {
   });
 };
 
-var getAudioDuration = async (file, callback) => {
+let getAudioDuration = async (file, callback) => {
   // Hide loading screen
   displayLoading(true);
   // Initialize file reader
@@ -82,11 +82,10 @@ var getAudioDuration = async (file, callback) => {
   reader.onload = (e) => {
     // Get data
     let arrayBuffer = e.target.result;
-    let fileName = file.name;
     // Set filename on view
     // target.setAttribute("data-title", fileName);
     // Create an instance of AudioContext
-    var audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    let audioContext = new (window.AudioContext || window.webkitAudioContext)();
     // Asynchronously decode audio file data contained in an ArrayBuffer.
     audioContext
       .decodeAudioData(arrayBuffer)

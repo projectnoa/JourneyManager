@@ -4,21 +4,21 @@
  * Required External Modules
  */
 
-const express = require('express');
+import { Router } from 'express';
 
 // Controllers
-const sessionController = require('./../controllers/session');
-const postsController = require('./../controllers/posts');
-const podcastsController = require('./../controllers/podcasts');
-const recordingsController = require('./../controllers/recordings');
-const tweetsController = require('./../controllers/tweets');
-const imagesController = require('./../controllers/images');
+import { validateSession } from './../controllers/session.js';
+import { postsIndex, postsNew, postsCreate, tagsSearch } from './../controllers/posts.js';
+import { podcastsIndex, podcastsNew, podcastsCreate, podcastsEdit, podcastsUpdate } from './../controllers/podcasts.js';
+import { recordingsIndex, recordingsCreateSeason, recordingsCreateFile } from './../controllers/recordings.js';
+import { tweetsIndex, tweetsNew, tweetsCreate, tweetsEdit, tweetsUpdate, tweetsDestroy } from './../controllers/tweets.js';
+import { imagesIndex, imagesNew, imagesCreateCollection, imagesCreateImage, imagesProcess, imagesCollectionDestroy, imagesImageDestroy } from './../controllers/images.js';
 
 /**
  * App Variables
  */
 
-const router = express.Router();
+const router = Router();
 
 /**
  * Routes Definitions
@@ -30,44 +30,44 @@ router.get('/', (req, res) => {
 });
 
 // Dashboard
-router.get('/dashboard', sessionController.validateSession, (req, res) => {
+router.get('/dashboard', validateSession, (req, res) => {
   res.render('dashboard', { title: 'Dashboard', authorized: true });
 });
 
 // Posts
-router.get('/posts', sessionController.validateSession, postsController.postsIndex);
-router.get('/posts/new', sessionController.validateSession, postsController.postsNew);
-router.post('/posts/create', sessionController.validateSession, postsController.postsCreate);
+router.get('/posts', validateSession, postsIndex);
+router.get('/posts/new', validateSession, postsNew);
+router.post('/posts/create', validateSession, postsCreate);
 
-router.get('/tags/search', sessionController.validateSession, postsController.tagsSearch);
+router.get('/tags/search', validateSession, tagsSearch);
 
 // Podcasts
-router.get('/podcasts', sessionController.validateSession, podcastsController.podcastsIndex);
-router.get('/podcasts/new', sessionController.validateSession, podcastsController.podcastsNew);
-router.post('/podcasts/create', sessionController.validateSession, podcastsController.podcastsCreate);
-router.post('/podcasts/:id/edit', sessionController.validateSession, podcastsController.podcastsEdit);
-router.post('/podcasts/:id/update', sessionController.validateSession, podcastsController.podcastsUpdate);
+router.get('/podcasts', validateSession, podcastsIndex);
+router.get('/podcasts/new', validateSession, podcastsNew);
+router.post('/podcasts/create', validateSession, podcastsCreate);
+router.post('/podcasts/:id/edit', validateSession, podcastsEdit);
+router.post('/podcasts/:id/update', validateSession, podcastsUpdate);
 
 // Recordings
-router.get('/recordings', sessionController.validateSession, recordingsController.recordingsIndex);
-router.post('/recordings/season', sessionController.validateSession, recordingsController.recordingsCreateSeason);
-router.post('/recordings/create', sessionController.validateSession, recordingsController.recordingsCreateFile);
+router.get('/recordings', validateSession, recordingsIndex);
+router.post('/recordings/season', validateSession, recordingsCreateSeason);
+router.post('/recordings/create', validateSession, recordingsCreateFile);
 
 // Tweets
-router.get('/tweets', sessionController.validateSession, tweetsController.tweetsIndex);
-router.get('/tweets/new', sessionController.validateSession, tweetsController.tweetsNew);
-router.post('/tweets/create', sessionController.validateSession, tweetsController.tweetsCreate);
-router.post('/tweets/:id/edit', sessionController.validateSession, tweetsController.tweetsEdit);
-router.post('/tweets/:id/update', sessionController.validateSession, tweetsController.tweetsUpdate);
-router.post('/tweets/:id/delete', sessionController.validateSession, tweetsController.tweetsDestroy);
+router.get('/tweets', validateSession, tweetsIndex);
+router.get('/tweets/new', validateSession, tweetsNew);
+router.post('/tweets/create', validateSession, tweetsCreate);
+router.post('/tweets/:id/edit', validateSession, tweetsEdit);
+router.post('/tweets/:id/update', validateSession, tweetsUpdate);
+router.post('/tweets/:id/delete', validateSession, tweetsDestroy);
 
 // Images
-router.get('/images', sessionController.validateSession, imagesController.imagesIndex);
-router.get('/images/new', sessionController.validateSession, imagesController.imagesNew);
-router.post('/images/create', sessionController.validateSession, imagesController.imagesCreateCollection);
-router.post('/images/createImage', sessionController.validateSession, imagesController.imagesCreateImage);
-router.post('/images/process', sessionController.validateSession, imagesController.imagesProcess);
-router.post('/images/:id/delete', sessionController.validateSession, imagesController.imagesCollectionDestroy);
-router.post('/images/:collection_id/image/:id/delete', sessionController.validateSession, imagesController.imagesImageDestroy);
+router.get('/images', validateSession, imagesIndex);
+router.get('/images/new', validateSession, imagesNew);
+router.post('/images/create', validateSession, imagesCreateCollection);
+router.post('/images/createImage', validateSession, imagesCreateImage);
+router.post('/images/process', validateSession, imagesProcess);
+router.post('/images/:id/delete', validateSession, imagesCollectionDestroy);
+router.post('/images/:collection_id/image/:id/delete', validateSession, imagesImageDestroy);
 
-module.exports = router;
+export default router;

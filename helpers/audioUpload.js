@@ -1,26 +1,28 @@
-const util = require("util");
-const path = require("path");
-const multer = require("multer");
+import { promisify } from "util";
+import { join } from "path";
+import multer, { diskStorage } from "multer";
 
-var storage = multer.diskStorage({
+import { getDirName } from './helper.js';
+
+let storage = diskStorage({
   destination: (req, file, callback) => {
-    callback(null, path.join(`${__dirname}/../uploads`));
+    callback(null, join(`${getDirName(import.meta.url)}/../uploads`));
   },
   filename: (req, file, callback) => {
     const match = ["audio/mpeg"];
 
     if (match.indexOf(file.mimetype) === -1) {
-      var message = `${file.originalname} is invalid. Only accept mp3.`;
+      let message = `${file.originalname} is invalid. Only accept mp3.`;
       
       return callback(message, null);
     }
 
-    var filename = `${Date.now()}-ajfw-${file.originalname}`;
+    let filename = `${Date.now()}-ajfw-${file.originalname}`;
 
     callback(null, filename);
   }
 });
 
-var uploadFiles = multer({ storage: storage }).single("file");
-var uploadAudioMiddleware = util.promisify(uploadFiles);
-module.exports = uploadAudioMiddleware;
+let uploadFiles = multer({ storage: storage }).single("file");
+let uploadAudioMiddleware = promisify(uploadFiles);
+export default uploadAudioMiddleware;

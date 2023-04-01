@@ -4,13 +4,13 @@
  * Required External Modules
  */
 
-const axios = require('axios');
+import axios from 'axios';
 
 /**
  *  Methods
  */
 
-exports.validateSession = (req, res, next) => {
+export function validateSession(req, res, next) {
     axios({
         method: 'post',
         url: process.env.JM_WP_ENDPOINT + '/oauth/introspection/',
@@ -28,4 +28,4 @@ exports.validateSession = (req, res, next) => {
         req.session.returnTo = req.originalUrl;
         res.redirect('/auth/wordpress');
     });
-};
+}

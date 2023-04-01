@@ -4,7 +4,7 @@
  * Required External Modules
  */
 
-const app = require('./app');
+import app from './app.js';
 
 /**
  * Server Activation

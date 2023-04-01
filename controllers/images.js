@@ -4,25 +4,26 @@
  * Required External Modules
  */
 
-const util = require('util');
+import { promisify } from 'util';
 
-var fs = require('fs');
-const path = require("path");
+import { unlink as _unlink, unlinkSync, createReadStream } from 'fs';
+import { basename } from "path";
 
-const Jimp = require('jimp');
+import pkg from 'jimp';
+const { read } = pkg;
 
-var sizeOf = require('image-size');
+import sizeOf from 'image-size';
 
-var Collection = require('./../models/collection');
+import Collection from './../models/collection.js';
 
-const fetcher = require('./../helpers/fetcher');
-const requestProcessor = require('./../helpers/imageUpload');
+import fetcher from './../helpers/fetcher.js';
+import requestProcessor from './../helpers/imageUpload.js';
 
-const winston = require('./../helpers/winston');
-const helpers = require('./../helpers/helper');
+import { info, error } from './../helpers/winston.js';
+import { setNotice } from './../helpers/helper.js';
 
-const s3 = require('./../helpers/s3');
-const xml = require('./../helpers/xml');
+import { submitS3File, deleteS3File } from './../helpers/s3.js';
+import { jsonToXML } from './../helpers/xml.js';
 
 /**
  * Variables
@@ -42,32 +43,24 @@ const resourceKey = 'settings.xml';
  *  Methods
  */
 
-exports.imagesIndex = async (req, res) => {
-    let page = req.query.page;
+export async function imagesIndex(req, res) {
     let tab = req.query.tab;
-
-    if (page == undefined) page = 1;
 
     try {
         // Get live feed
-        winston.info(' -- Getting live feed.');
+        info(' -- Getting live feed.');
 
-        var results = [];
+        let results = [];
 
         if (!sources.includes(tab)) tab = sources[0];
 
         // Parse posts
-        winston.info(' -- Parsing items.');
+        info(' -- Parsing items.');
         for (const source of sources) {
             const url = feedURL[source];
             let result = await fetcher(url);
 
             let items = parseImages(result);
-
-            // let total = items.length;
-            // let pages = Math.ceil(total / 5);
-
-            // items = items.slice((page - 1) * 5, page * 5);
 
             let url_elements = url.split('/');
             let title = url_elements[url_elements.length - 2];
@@ -76,7 +69,7 @@ exports.imagesIndex = async (req, res) => {
         };
 
         // Render page
-        winston.info(' -- Rendering page.');
+        info(' -- Rendering page.');
         res.render('./images/index', {
             title: 'Images',
             authorized: true,
@@ -85,26 +78,26 @@ exports.imagesIndex = async (req, res) => {
         });
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Images', authorized: true });
     }
-};
+}
 
-exports.imagesNew = (req, res) => {
+export function imagesNew(req, res) {
     res.render('./../views/images/new', { title: 'Upload Images', authorized: true });
-};
+}
 
-exports.imagesCreateCollection = async (req, res) => {
+export async function imagesCreateCollection(req, res) {
     let source = req.body.source;
 
     try {
-        if (!sources.includes(source)) throw 'Missing source!'
+        if (!sources.includes(source)) throw new Error('Missing source!')
 
         // Get live feed
-        winston.info(' -- Getting live feed.');
+        info(' -- Getting live feed.');
         let result = await fetcher(feedURL[source]);
 
         // If no items then initialize
@@ -113,54 +106,54 @@ exports.imagesCreateCollection = async (req, res) => {
         }
 
         // Append item
-        winston.info(' -- Appending item.');
+        info(' -- Appending item.');
         result.resources.collection.push({ $: { title: req.body.title, id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
 
         // Publish feed update
-        winston.info(' -- Publishing feed updates.');
-        let feedResponse = await s3.submitS3File({
+        info(' -- Publishing feed updates.');
+        await submitS3File({
             Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
             Key: resourceKey,
-            Body: xml.jsonToXML(result),
+            Body: jsonToXML(result),
             ACL: 'public-read'
         });
 
         // Set notice
-        helpers.setNotice(res, 'Collection created!');
+        setNotice(res, 'Collection created!');
 
         // Respond
-        winston.info(' -- Success.');
+        info(' -- Success.');
         res.redirect('/images?tab=' + source);
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Upload Images', authorized: true });
     }
 }
 
-exports.imagesCreateImage = async (req, res) => {
-    const unlink = util.promisify(fs.unlink);
+export async function imagesCreateImage(req, res) {
+    const unlink = promisify(_unlink);
 
     let fileDeleted = true;
 
     try {
         // Process request
-        winston.info(' -- Processing request.');
+        info(' -- Processing request.');
         await requestProcessor(req, res);
 
         // Validate file upload
-        winston.info(' -- Validating request.');
+        info(' -- Validating request.');
         if (req.fileValidationError) {
             // Set notice
-            helpers.setNotice(res, `An error occured: ${req.fileValidationError}`);
+            setNotice(res, `An error occured: ${req.fileValidationError}`);
             // Return error
             return res.redirect('back', 500, { title: 'Images', authorized: true });
         } else if (!req.file) {
             // Set notice
-            helpers.setNotice(res, 'An error occured: No file provided');
+            setNotice(res, 'An error occured: No file provided');
             // Return error
             return res.redirect('back', 500, { title: 'Images', authorized: true });
         }
@@ -168,41 +161,41 @@ exports.imagesCreateImage = async (req, res) => {
         fileDeleted = false;
 
         // Get image collection id
-        var collection_id = req.body.collection_id;
+        let collection_id = req.body.collection_id;
 
         let source = req.body.source;
 
-        if (!sources.includes(source)) throw 'Missing source!'
+        if (!sources.includes(source)) throw new Error('Missing source!')
 
         // Compressing image
-        winston.info(' -- Compressing images.');
-        let jimpImg = await Jimp.read(req.file.path);
-        await jimpImg.quality(60);
+        info(' -- Compressing images.');
+        let jimpImg = await read(req.file.path);
+        jimpImg.quality(60);
         await jimpImg.writeAsync(req.file.path);
 
         const compressed_path = req.file.path;
-        const compressed_name = path.basename(req.file.path);
+        const compressed_name = basename(req.file.path);
 
         // Upload file
-        winston.info(' -- Uploading image file.');
+        info(' -- Uploading image file.');
         let response = await uploadImage({ filename: compressed_name, path: compressed_path }, source);
 
         // Getting image dimentions
-        winston.info(' -- Getting image dimentions.');
-        var dimensions = sizeOf(req.file.path);
+        info(' -- Getting image dimentions.');
+        let dimensions = sizeOf(req.file.path);
 
         // Delete file
-        winston.info(' -- Deleting image files.');
+        info(' -- Deleting image files.');
         deleteTemp(req.file, unlink);
 
         fileDeleted = true;
 
         // Get live feed
-        winston.info(' -- Getting live feed.');
+        info(' -- Getting live feed.');
         let result = await fetcher(feedURL[source]);
 
         // Append item
-        winston.info(' -- Appending item.');
+        info(' -- Appending item.');
         let updatedResult = updateCollection(result, collection_id, (element) => {
             if (element.image == undefined) {
                 element.image = [];
@@ -216,97 +209,95 @@ exports.imagesCreateImage = async (req, res) => {
         });
 
         // Publish feed update
-        winston.info(' -- Publishing feed updates.');
-        let feedResponse = await s3.submitS3File({
+        info(' -- Publishing feed updates.');
+        await submitS3File({
             Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
             Key: resourceKey,
-            Body: xml.jsonToXML(updatedResult),
+            Body: jsonToXML(updatedResult),
             ACL: 'public-read'
         });
 
         // Set notice
-        helpers.setNotice(res, 'Image saved!');
+        setNotice(res, 'Image saved!');
 
         // Respond
-        winston.info(' -- Success.');
+        info(' -- Success.');
         res.status(200).send({ redirectTo: '/images?tab=' + source });
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
         if (!fileDeleted) deleteTemp(req.file, unlink);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Upload Images', authorized: true });
     }
 }
 
-exports.imagesProcess = async (req, res) => {
-    const unlink = util.promisify(fs.unlink);
+export async function imagesProcess(req, res) {
+    const unlink = promisify(_unlink);
 
-    let fileDeleted = true;
+    let fileDeleted = false;
 
     try {
         // Process request
-        winston.info(' -- Processing request.');
+        info(' -- Processing request.');
         await requestProcessor(req, res);
 
-        fileDeleted = false;
-
         // Compressing image
-        winston.info(' -- Compressing images.');
-        let jimpImg = await Jimp.read(req.file.path);
-        await jimpImg.quality(60);
+        info(' -- Compressing images.');
+        let jimpImg = await read(req.file.path);
+        jimpImg.quality(60);
         await jimpImg.writeAsync(req.file.path);
 
         const filePath = req.file.path;
-        const filename = path.basename(req.file.path);
+        const filename = basename(req.file.path);
 
         fileDeleted = true;
 
         // Returning image
-        winston.info(' -- Returning images.');
+        info(' -- Returning images.');
         res.download(filePath, filename, (err) => {
             if (err) {
                 // Log error message
-                winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+                error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
                 // Set notice
-                helpers.setNotice(res, `An error occured: ${err.message}`);
+                setNotice(res, `An error occured: ${err.message}`);
             }
 
-            fs.unlinkSync(filePath);
+            unlinkSync(filePath);
         });
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
         if (!fileDeleted) deleteTemp(req.file, unlink);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Upload Images', authorized: true });
     }
-};
+}
 
-exports.imagesCollectionDestroy = async (req, res) => {
+export async function imagesCollectionDestroy(req, res) {
     // Get removed collection id
-    var collection_id = req.body.id;
+    let collection_id = req.body.id;
     let source = req.body.source;
 
     try {
-        if (!sources.includes(source)) throw 'Missing source!'
+        if (!sources.includes(source)) throw new Error('Missing source!')
 
         // Get live feed
-        winston.info(' -- Getting live feed.');
+        info(' -- Getting live feed.');
         let result = await fetcher(feedURL[source]);
 
         // Find collection
-        winston.info(' -- Finding collection.');
+        info(' -- Finding collection.');
         let collection = result.resources.collection.find(item => item.$.id == collection_id);
 
         // Delete every image on collection
-        winston.info(' -- Deleting images in collection.');
+        info(' -- Deleting images in collection.');
         if (Array.isArray(collection.image)) {
             // Delete every image on collection
             for (const image of collection.image) {
@@ -319,57 +310,57 @@ exports.imagesCollectionDestroy = async (req, res) => {
         }
 
         // Exclude collection
-        winston.info(' -- Removing collection.');
+        info(' -- Removing collection.');
         result.resources.collection = result.resources.collection.filter(item => item.$.id != collection_id);
 
         // Publish feed update
-        winston.info(' -- Publishing feed updates.');
-        let feedResponse = await s3.submitS3File({
+        info(' -- Publishing feed updates.');
+        await submitS3File({
             Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
             Key: resourceKey,
-            Body: xml.jsonToXML(result),
+            Body: jsonToXML(result),
             ACL: 'public-read'
         });
 
         // Set notice
-        helpers.setNotice(res, 'Collection deleted!');
+        setNotice(res, 'Collection deleted!');
 
         // Respond
-        winston.info(' -- Success.');
+        info(' -- Success.');
         res.redirect('/images?tab=' + source);
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Images', authorized: true });
     }
-};
+}
 
-exports.imagesImageDestroy = async (req, res) => {
+export async function imagesImageDestroy(req, res) {
     // Get removed image id
-    var id = req.body.id;
+    let id = req.body.id;
     // Get removed image collection id
-    var collection_id = req.body.collection_id;
+    let collection_id = req.body.collection_id;
     // Get removed image key
-    var key = req.body.key;
+    let key = req.body.key;
     let source = req.body.source;
 
     try {
-        if (!sources.includes(source)) throw 'Missing source!'
+        if (!sources.includes(source)) throw new Error('Missing source!')
 
         // Remove image from S3
-        winston.info(' -- Deleting image file.');
+        info(' -- Deleting image file.');
         let response = await removeImage(key, source);
 
         if (response.$response.httpResponse.statusCode === 204) {
             // Get live feed
-            winston.info(' -- Getting live feed.');
+            info(' -- Getting live feed.');
             let result = await fetcher(feedURL[source]);
 
             // Filter item
-            winston.info(' -- Filtering image feed.');
+            info(' -- Filtering image feed.');
             let updatedResult = updateCollection(result, collection_id, (collection) => {
                 if (Array.isArray(collection.image)) {
                     collection.image = collection.image.filter(item => item.$.id !== id);
@@ -381,40 +372,40 @@ exports.imagesImageDestroy = async (req, res) => {
             });
 
             // Publish feed update
-            winston.info(' -- Publishing feed updates.');
-            let feedResponse = await s3.submitS3File({
+            info(' -- Publishing feed updates.');
+            await submitS3File({
                 Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
                 Key: resourceKey,
-                Body: xml.jsonToXML(updatedResult),
+                Body: jsonToXML(updatedResult),
                 ACL: 'public-read'
             });
         }
 
         // Set notice
-        helpers.setNotice(res, 'Image deleted!');
+        setNotice(res, 'Image deleted!');
 
         // Respond
-        winston.info(' -- Success.');
+        info(' -- Success.');
         res.redirect('/images?tab=' + source);
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Images', authorized: true });
     }
-};
+}
 
-var parseImages = (result) => {
+let parseImages = (result) => {
     return result.resources.collection !== undefined ? result.resources.collection.map(item => new Collection(item)).reverse() : [];
 }
 
-var removeImage = async (key, source) => {
-    return await s3.deleteS3File(process.env.JM_AWS_S3_ASSETS_BUCKET, source + '/' + key);
+let removeImage = async (key, source) => {
+    return await deleteS3File(process.env.JM_AWS_S3_ASSETS_BUCKET, source + '/' + key);
 }
 
-var updateCollection = (result, id, updateCallback) => {
+let updateCollection = (result, id, updateCallback) => {
     for (let index = 0; index < result.resources.collection.length; index++) {
         const element = result.resources.collection[index];
 
@@ -427,14 +418,14 @@ var updateCollection = (result, id, updateCallback) => {
     return result;
 }
 
-var uploadImage = async (file, source) => {
+let uploadImage = async (file, source) => {
     // Create file stream
-    var fileStream = fs.createReadStream(file.path);
+    let fileStream = createReadStream(file.path);
     fileStream.on('error', function(err) {
-        winston.info('File Error', err);
+        info('File Error', err);
     });
     // Submit to S3
-    return await s3.submitS3File({
+    return await submitS3File({
         Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
         Key: file.filename,
         Body: fileStream,
@@ -442,6 +433,6 @@ var uploadImage = async (file, source) => {
     });
 }
 
-var deleteTemp = async (file, unlinker) => {
+let deleteTemp = async (file, unlinker) => {
     return await unlinker(file.path);
 }

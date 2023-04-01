@@ -4,37 +4,35 @@
  * Required External Modules
  */
 
-var moment = require('moment');
+import Post from './../models/post.js';
 
-var Post = require('./../models/post');
+import requestProcessor from './../helpers/imageUpload.js';
 
-const requestProcessor = require('./../helpers/imageUpload');
+import { info, error, warn } from './../helpers/winston.js';
 
-const winston = require('./../helpers/winston');
-
-const helpers = require('./../helpers/helper');
-const wp = require('./../helpers/wordpress');
+import { setNotice, sanitize, postFooter, isDefined } from './../helpers/helper.js';
+import { getPosts, publishPostDraft, getTags, publishTag } from './../helpers/wordpress.js';
 
 /**
  *  Methods
  */
 
-exports.postsIndex = async (req, res) => {
+export async function postsIndex(req, res) {
     let page = req.query.page;
 
     if (page == undefined) page = 1;
 
     try {
         // Get live feed
-        winston.info(' -- Getting live feed.');
-        let result = await wp.getPosts(req.session.accessToken, page)
+        info(' -- Getting live feed.');
+        let result = await getPosts(req.session.accessToken, page)
 
         // Parse posts
-        winston.info(' -- Parsing items.');
+        info(' -- Parsing items.');
         let items = result.map(item => new Post(item));
 
         // Render page
-        winston.info(' -- Rendering page.');
+        info(' -- Rendering page.');
         res.render('./posts/index', { 
             title: 'Posts', 
             authorized: true, 
@@ -46,45 +44,45 @@ exports.postsIndex = async (req, res) => {
         });
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Posts', authorized: true });
     }
-};
+}
 
-exports.postsNew = (req, res) => {
+export function postsNew(req, res) {
     res.render('./../views/posts/new', { title: 'New Post Draft', authorized: true });
-};
+}
 
-exports.postsCreate = async (req, res) => {
+export async function postsCreate(req, res) {
     try {
         // Process request
-        winston.info(' -- Processing request.');
+        info(' -- Processing request.');
         await requestProcessor(req, res);
 
         // Validate form data
-        winston.info(' -- Parsing form data.');
+        info(' -- Parsing form data.');
 
         // Set properties
-        var title = helpers.sanitize(req.body.title);
-        var excerpt = helpers.sanitize(req.body.excerpt);
-        var keywords = helpers.sanitize(req.body.keywords);
+        let title = sanitize(req.body.title);
+        let excerpt = sanitize(req.body.excerpt);
+        let keywords = sanitize(req.body.keywords);
         let tags = keywords.split(',').map(tag => tag.trim());
-        var postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
+        let postSlug = encodeURI(title.toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/[^a-z0-9]/g, '-'));
         
         // Publish tags
-        winston.info(' -- Publishing tags');
+        info(' -- Publishing tags');
         let tag_ids = await createTags(tags, req.session.accessToken);
 
         // Create post
-        winston.info(' -- Creating post');
-        var post = {
+        info(' -- Creating post');
+        let post = {
             slug: postSlug,
             status: 'draft',
             title: title,
-            content: helpers.postFooter(),
+            content: postFooter(),
             author: req.session.userId,
             excerpt: excerpt,
             comment_status: 'closed',
@@ -92,63 +90,63 @@ exports.postsCreate = async (req, res) => {
         }
 
         // Publish post draft
-        winston.info(' -- Publishing post draft.');
-        let succeeded = await wp.publishPostDraft(post, req.session.accessToken);
+        info(' -- Publishing post draft.');
+        let succeeded = await publishPostDraft(post, req.session.accessToken);
 
         // Respond to response
-        if (helpers.isDefined(succeeded)) {
+        if (isDefined(succeeded)) {
             // Set notice
-            helpers.setNotice(res, 'The post draft has been created.');
+            setNotice(res, 'The post draft has been created.');
             // Respond
-            winston.info(' -- Success.');
+            info(' -- Success.');
             res.status(200).send({ redirectTo: '/posts' });
         } else {
             // Set notice
-            helpers.setNotice(res, 'There was an error creating the post draft.');
+            setNotice(res, 'There was an error creating the post draft.');
             // Return error 
-            winston.warn(' -- FAILURE.');
+            warn(' -- FAILURE.');
             res.redirect('back', 500, { title: 'New Post Draft', authorized: true });
         }
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'New Post Draft', authorized: true });
     }
-};
+}
 
-exports.tagsSearch = async (req, res) => {
+export async function tagsSearch(req, res) {
     let term = req.query.term;
 
     try {
         // Get tags
-        winston.info(' -- Getting tags.');
-        let result = await wp.getTags(term, req.session.accessToken);
+        info(' -- Getting tags.');
+        let result = await getTags(term, req.session.accessToken);
 
         // Parse tags
-        winston.info(' -- Parsing items.');
+        info(' -- Parsing items.');
         let items = result.map(item => ({ id: item.id, value: item.name}));
 
         // Prepare response
-        winston.info(' -- Preparing response.');
+        info(' -- Preparing response.');
 
         res.json(items);
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
     }
 }
 
-var createTags = async (tags, token) => {
+let createTags = async (tags, token) => {
     let tag_ids = [];
 
-    for (let index = 0; index < tags.length; index++) {  
+    for (const element of tags) {  
         try {
-            let tag_data = await wp.publishTag({ 'name': tags[index] }, token);
+            let tag_data = await publishTag({ 'name': element }, token);
 
             if (tag_data.id !== undefined) {
                 tag_ids.push(tag_data.id);

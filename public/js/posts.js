@@ -1,6 +1,6 @@
 
 function postsSetup() {
-
+  // NOTHING
 }
 
 function newPostSetup() {

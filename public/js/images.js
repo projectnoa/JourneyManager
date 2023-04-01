@@ -182,26 +182,26 @@ function newImagesSetup() {
     });
 }
 
-var containerElement = () => {
+let containerElement = () => {
     return document.querySelector("[data-behavior~='cover-uploader']");
 }
 
-var cropperImageElement = () => {
+let cropperImageElement = () => {
     return document.querySelector("img[data-behavior~='cover-cropper']");
 }
 
-var cropperContainerElement = () => {
+let cropperContainerElement = () => {
     return document.querySelector("div[data-behavior~='cover-container']");
 }
 
-var previewElement = () => {
+let previewElement = () => {
     return document.querySelector("div[data-behavior~='cover-preview']");
 }
 
-var rotatorElements = () => {
+let rotatorElements = () => {
     return document.querySelectorAll("[data-behavior~='cover-rotate']");
 }
 
-var cropperSubmitElement = () => {
+let cropperSubmitElement = () => {
     return document.querySelector("button[data-behavior~='cover-submit']");
 }

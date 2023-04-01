@@ -1,7 +1,7 @@
 
 // Add onPageLoad event
 window.addEventListener("load", () => {
-    let meta = document.querySelector('meta[name="page-id"]');
+    const meta = document.querySelector('meta[name="page-id"]');
 
     if (meta !== undefined && meta !== null) {
         const pageFunction = meta.content + 'Setup';
@@ -18,8 +18,8 @@ window.addEventListener("load", () => {
     setDeleteBehavior();
 });
 
-var refreshPage = () => {
-    var date = addMinutes(new Date(), 1);
+let refreshPage = () => {
+    const date = addMinutes(new Date(), 1);
     document.cookie = '_JourneyManager_fresh=true; expires=' + date.toGMTString() + ';';
 
     location.reload();

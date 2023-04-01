@@ -4,17 +4,24 @@
  * Required External Modules
  */
 
-require("dotenv").config();
+import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+dotenv.config();
 
-const express = require('express');
-const path = require("path");
-const passport = require('./auth');
-const session = require('express-session');
-const cookieParser = require('cookie-parser');  // CSRF Cookie parsing
-const bodyParser = require('body-parser');      // CSRF Body parsing
-const router = require('./routes/index');
-const morgan = require('morgan');
-const winston = require('./helpers/winston');
+import express, { static as _static } from 'express';
+import { join } from "path";
+
+import passport from './auth.js';
+
+import esession from 'cookie-session';
+import cookieParser from 'cookie-parser';             // CSRF Cookie parsing
+
+import bodyParser from 'body-parser';                     // CSRF Body parsing                  
+
+import router from './routes/index.js';
+import morgan from 'morgan';
+import winston from './helpers/winston.js';
+ 
+import { getDirName } from './helpers/helper.js';
 
 /**
  * App Variables
@@ -42,7 +49,7 @@ app.use(function (req, res, next) {
   next();
 });
 
-app.use(session({
+app.use(esession({
     resave: true,
     saveUninitialized: true,
     secret: process.env.JM_COOKIE_SECRET,
@@ -60,10 +67,10 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(morgan('combined', { stream: winston.stream }));
 
-app.set("views", path.join(__dirname, "views"));
+app.set("views", join(getDirName(import.meta.url), "views"));
 app.set("view engine", "pug");
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(_static(join(getDirName(import.meta.url), "public")));
 
 app.use('/', router);
 
@@ -87,14 +94,12 @@ app.use(function(err, req, res, next) {
 
 router.get('/auth/wordpress', 
   passport.authorize('wordpress'));
- 
+  
 router.get('/auth/wordpress/callback', 
-  passport.authorize('wordpress', { failureRedirect: '/' }),
+  passport.authorize('wordpress', { failureRedirect: '/login' }),
   function(req, res) {
-    var account = req.account;
-
     res.redirect(req.session.returnTo || '/dashboard');
     delete req.session.returnTo;
 });
 
-module.exports = app;
+export default app;

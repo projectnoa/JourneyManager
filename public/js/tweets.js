@@ -1,14 +1,12 @@
-
-
 function tweetsSetup() {
-    
+    // NOTHING    
 }
 
 function newTweetSetup() {
     // Get element
-    var element = document.querySelector('textarea[data-behavior~="tweet-parse"]');
+    let element = document.querySelector('textarea[data-behavior~="tweet-parse"]');
     // Initialize twitter-text library
-    var twitter = require('twitter-text');
+    let twitter = require('twitter-text');
     // Maximum tweet lenght
     const maxLength = 280;
     // Add input listener 
@@ -36,9 +34,9 @@ function newTweetSetup() {
 
 function editTweetSetup() {
     // Get element
-    var element = document.querySelector('textarea[data-behavior~="tweet-parse"]');
+    let element = document.querySelector('textarea[data-behavior~="tweet-parse"]');
     // Initialize twitter-text library
-    var twitter = require('twitter-text');
+    let twitter = require('twitter-text');
     // Maximum tweet lenght
     const maxLength = 280;
     // Add input listener 
@@ -61,7 +59,7 @@ function editTweetSetup() {
     // Set tweet length data
     setTweetLenghtData(maxLength);
 
-    var event = new Event('input', {
+    let event = new Event('input', {
         bubbles: true,
         cancelable: true,
     });
@@ -69,7 +67,7 @@ function editTweetSetup() {
     element.dispatchEvent(event);
 };
 
-var setHighlightBehavior = (target, remaining, text, tweetData) => {
+let setHighlightBehavior = (target, remaining, text, tweetData) => {
     // Get element
     let placeholderBacker = target.nextSibling;
     // Check if text exceeds limit  
@@ -93,9 +91,9 @@ let setHighlight = (text) => {
     return text;
 }
 
-var setTweetLenghtData = (length) => {
+let setTweetLenghtData = (length) => {
     // Get element
-    var element = document.querySelector('span[data-behavior~="tweet-length"]');
+    let element = document.querySelector('span[data-behavior~="tweet-length"]');
     // Set text
     element.innerHTML = length;
     // Remove classes
@@ -111,9 +109,9 @@ var setTweetLenghtData = (length) => {
     }
 }
 
-var setTweetSubmitEnabled = (enabled) => {
+let setTweetSubmitEnabled = (enabled) => {
     // Get element
-    var element = document.querySelector('input[type="submit"]');
+    let element = document.querySelector('input[type="submit"]');
     // Remove classes 
     element.classList.remove('btn-primary');
     element.classList.remove('btn-secondary');

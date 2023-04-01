@@ -1,22 +1,30 @@
 
-var dateFormat = require('dateformat');
+import dateFormat from 'dateformat';
 
-function Collection(item) {
-    this.data = item.$ || {};
+const baseDateFormat = "dddd, mmmm dS, yyyy";
 
-    this.id = this.data.id || null;
-    this.title = this.data.title || null;
-    this.date = (this.data.date !== undefined ? dateFormat(new Date(this.data.date), "dddd, mmmm dS, yyyy") : null) || null;
+class Collection {
+    constructor(item) {
+        this.data = item.$ || {};
 
-    if (item.image !== undefined) {
-        if (typeof item.image === 'array' || item.image instanceof Array) {
-            this.images = item.image.map(image => { return { id: image.$.id, title: image.$.title, url: image.$.url, width: image.$.width, height: image.$.height} })
-        } else {
-            this.images = [{ id: item.image.$.id, title: item.image.$.title, url: item.image.$.url, width: item.image.$.width, height: item.image.$.height }]
-        }
-    } else {
-        this.images = null;
+        this.id = this.data.id || null;
+        this.title = this.data.title || null;
+        this.date = this.data.date ? dateFormat(new Date(this.data.date), baseDateFormat) : null;
+
+        this.images = this.processImages(item.image);
+    }
+
+    processImages(images) {
+        if (images === undefined) return null;
+
+        const imageList = Array.isArray(images) ? images : [images];
+
+        return imageList.map(image => {
+            const { id, title, url, width, height } = image.$;
+
+            return { id, title, url, width, height };
+        });
     }
 };
 
-module.exports = Collection;
+export default Collection;

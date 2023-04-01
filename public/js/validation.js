@@ -1,5 +1,5 @@
 
-var setPodcastFormValidationBehavior = () => {
+let setPodcastFormValidationBehavior = () => {
     let form = document.querySelector('form[action="/podcasts/create"]');
 
     $(form).validate({
@@ -25,7 +25,7 @@ var setPodcastFormValidationBehavior = () => {
     });
 };
 
-var setPostFormValidationBehavior = () => {
+let setPostFormValidationBehavior = () => {
     let form = document.querySelector('form[action="/posts/create"]');
 
     $(form).validate({
@@ -52,7 +52,7 @@ let showValidationErrors = function (errorMap, errorList) {
     this.successList.forEach(item => $(item).popover('hide'));
 
     errorList.forEach(item => {
-        let _popover = $(item.element).popover({
+        $(item.element).popover({
             trigger: 'manual',
             placement: 'top',
             content: item.message,
