@@ -80,7 +80,12 @@ export async function recordingsCreateSeason(req, res) {
         info(' -- Appending item.');
         feed.resources.collection.push({ $: { season: (result.resources.length + 1), id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
         // Update feed
-        await updateFeed(feed);
+        let response = await updateFeed(feed);
+
+        if (response.$metadata.httpStatusCode != 200) {
+            throw new Error('Error creating new season.');
+        }
+
         // Set notice
         setNotice(res, 'Season created!');
         // Respond
@@ -124,6 +129,11 @@ export async function recordingsCreateFile(req, res) {
         // Upload file
         info(' -- Uploading image file.');
         let response = await uploadFile(req);
+
+        if (response.$metadata.httpStatusCode != 200) {
+            throw new Error('Error uploading image file.');
+        }
+
         // Delete file
         info(' -- Deleting file.');
         deleteTemp(req.file, unlink);
@@ -192,21 +202,19 @@ let uploadFile = async (req) => {
     });
     // Upload file
     info(' -- Uploading podcast file.');
-    let uploadResponse = await submitS3File({
-        Bucket: process.env.JM_AWS_S3_FILE_BUCKET + '/' + podcastFilesFolder,
-        Key: req.file.filename,
+    return await submitS3File({
+        Bucket: process.env.JM_AWS_S3_FILE_BUCKET,
+        Key: `${podcastFilesFolder}/${req.file.filename}`,
         Body: fileStream,
         ACL: 'public-read',
         ContentType: 'audio/mp3'
     });
-
-    return uploadResponse;
 }
 
 let updateFeed = async (feed) => {
     // Publish feed update
     info(' -- Publishing feed updates.');
-    await submitS3File({
+    return await submitS3File({
         Bucket: process.env.JM_AWS_S3_FILE_BUCKET,
         Key: resourceKey,
         Body: jsonToXML(feed),

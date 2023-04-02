@@ -106,16 +106,26 @@ export async function imagesCreateCollection(req, res) {
 
         // Append item
         info(' -- Appending item.');
-        result.resources.collection.push({ $: { title: req.body.title, id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
+        result.resources.collection.push({ 
+            $: { 
+                title: req.body.title,
+                id: new Date().getTime(), 
+                date: new Date().toISOString().split('T')[0] 
+            } 
+        });
 
         // Publish feed update
         info(' -- Publishing feed updates.');
-        await submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
-            Key: resourceKey,
+        let response = await submitS3File({
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
+            Key: `${source}/${resourceKey}`,
             Body: jsonToXML(result),
             ACL: 'public-read'
         });
+
+        if (response.$metadata.httpStatusCode !== 200) {
+            throw new Error('Error creating new collection.');
+        }
 
         // Set notice
         setNotice(res, 'Collection created!');
@@ -209,12 +219,16 @@ export async function imagesCreateImage(req, res) {
 
         // Publish feed update
         info(' -- Publishing feed updates.');
-        await submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
-            Key: resourceKey,
+        response = await submitS3File({
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
+            Key: `${source}/${resourceKey}`,
             Body: jsonToXML(updatedResult),
             ACL: 'public-read'
         });
+
+        if (response.$metadata.httpStatusCode !== 200) {
+            throw new Error('Error creating new image.');
+        }
 
         // Set notice
         setNotice(res, 'Image saved!');
@@ -314,12 +328,16 @@ export async function imagesCollectionDestroy(req, res) {
 
         // Publish feed update
         info(' -- Publishing feed updates.');
-        await submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
-            Key: resourceKey,
+        let response = await submitS3File({
+            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
+            Key: `${source}/${resourceKey}`,
             Body: jsonToXML(result),
             ACL: 'public-read'
         });
+
+        if (response.$metadata.httpStatusCode !== 200) {
+            throw new Error('Error deleting collection.');
+        }
 
         // Set notice
         setNotice(res, 'Collection deleted!');
@@ -372,12 +390,16 @@ export async function imagesImageDestroy(req, res) {
 
             // Publish feed update
             info(' -- Publishing feed updates.');
-            await submitS3File({
-                Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
-                Key: resourceKey,
+            let response = await submitS3File({
+                Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
+                Key: `${source}/${resourceKey}`,
                 Body: jsonToXML(updatedResult),
                 ACL: 'public-read'
             });
+
+            if (response.$metadata.httpStatusCode !== 200) {
+                throw new Error('Error deleting image record.');
+            }
         }
 
         // Set notice
@@ -425,8 +447,8 @@ let uploadImage = async (file, source) => {
     });
     // Submit to S3
     return await submitS3File({
-        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET + '/' + source,
-        Key: file.filename,
+        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
+        Key: `${source}/${file.filename}`,
         Body: fileStream,
         ACL: 'public-read'
     });

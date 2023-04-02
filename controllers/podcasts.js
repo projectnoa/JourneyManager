@@ -133,7 +133,7 @@ export async function podcastsCreate(req, res) {
   
       const feedResponse = await updateFeed(feed);
   
-      if (!isDefined(feedResponse)) {
+      if (!isDefined(feedResponse) || feedResponse.$response.httpResponse.statusCode !== 200) {
         throw new Error('Feed could not be updated.');
       }
   
@@ -228,7 +228,7 @@ export async function podcastsUpdate(req, res) {
             // Update feed
             let feedResponse = await updateFeed(feed);
             // Respond to response
-            if (isDefined(feedResponse)) {
+            if (isDefined(feedResponse) && feedResponse.$response.httpResponse.statusCode === 200) {
                 // Set notice
                 setNotice(res, 'Podcast episode updated!');
                 // Respond
@@ -254,8 +254,8 @@ let backupFeed = async (res) => {
     // Back up feed
     info(' -- Backing up podcast feed.');
     let response = await backupFile({
-        Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup',
         CopySource: process.env.JM_AWS_S3_RSS_BUCKET + '/' + resourceKey,
+        Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup',
         Key: resourceKey.split('.').join('-' + Date.now() + '.')
     });
 
@@ -380,7 +380,7 @@ let createPostItem = async (req, data, pubDate) => {
 let updateFeed = async (feed) => {
     // Publish feed update
     info(' -- Publishing feed updates.');
-    let response = await submitS3File({
+    return await submitS3File({
         Bucket: process.env.JM_AWS_S3_RSS_BUCKET,
         Key: resourceKey,
         Body: jsonToXML(feed),
@@ -388,8 +388,6 @@ let updateFeed = async (feed) => {
         ContentType: 'application/rss+xml',
         ContentEncoding: 'UTF-8'
     });
-
-    return response;
 }
 
 let parsePodcast = (result) => {

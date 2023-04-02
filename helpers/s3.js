@@ -16,8 +16,10 @@ const REGION = "us-west-2";
 // Create an Amazon S3 service client object.
 const s3Client = new S3Client({ 
     region: REGION, 
-    accessKeyId: process.env.JM_AWS_S3_ID, 
-    secretAccessKey: process.env.JM_AWS_S3_SEC
+    credentials: {
+        accessKeyId: process.env.JM_AWS_S3_ID, 
+        secretAccessKey: process.env.JM_AWS_S3_SEC
+    }
 });
 
 /**
@@ -25,13 +27,13 @@ const s3Client = new S3Client({
  */
 
 export function submitS3File(params) {
-    return s3Client.send(new PutObjectCommand(params)).promise();
+    return s3Client.send(new PutObjectCommand(params));
 }
 
 export function deleteS3File(bucket, key) {
-    return s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key })).promise();
+    return s3Client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
 }
 
 export function backupFile(params) {
-    return s3Client.send(new CopyObjectCommand(params)).promise();
+    return s3Client.send(new CopyObjectCommand(params));
 }
