@@ -16,7 +16,7 @@
  import requestProcessor from './../helpers/audioUpload.js';
  
  import { info, error, warn } from './../helpers/winston.js';
- import { setNotice } from './../helpers/helper.js';
+ import { setNotice, getFileLocation } from './../helpers/helper.js';
  
  import { submitS3File } from './../helpers/s3.js';
  import { jsonToXML } from './../helpers/xml.js';
@@ -142,6 +142,9 @@ export async function recordingsCreateFile(req, res) {
         // Get live feed
         info(' -- Getting live feed.');
         let feed = await fetcher(feedURL);
+
+        const location = getFileLocation(process.env.JM_AWS_S3_FILE_BUCKET, `${podcastFilesFolder}/${req.file.filename}`);
+
         // Append item
         info(' -- Appending item.');
         let updatedFeed = updateCollection(feed, collection_id, (element) => {
@@ -160,7 +163,7 @@ export async function recordingsCreateFile(req, res) {
                 $: { 
                     id: date.getTime(), 
                     title: title, 
-                    url: response.Location, 
+                    url: location, 
                     episode: episode, 
                     length: length,
                     duration: duration,

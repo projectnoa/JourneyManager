@@ -13,6 +13,10 @@ export {
     getDirName
 }
 
+export function getFileLocation(bucket, key) {
+    return `https://s3-us-west-2.amazonaws.com/${bucket}/${key}`;
+}
+
 export function fileFilter(req, file, cb) {
     // Accept mp3 files only
     if (!file.originalname.match(/\.(mp3)$/)) {

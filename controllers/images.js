@@ -19,7 +19,7 @@ import fetcher from './../helpers/fetcher.js';
 import requestProcessor from './../helpers/imageUpload.js';
 
 import { info, error } from './../helpers/winston.js';
-import { setNotice } from './../helpers/helper.js';
+import { setNotice, getFileLocation } from './../helpers/helper.js';
 
 import { submitS3File, deleteS3File } from './../helpers/s3.js';
 import { jsonToXML } from './../helpers/xml.js';
@@ -189,6 +189,10 @@ export async function imagesCreateImage(req, res) {
         info(' -- Uploading image file.');
         let response = await uploadImage({ filename: compressed_name, path: compressed_path }, source);
 
+        if (response.$metadata.httpStatusCode !== 200) {
+            throw new Error('Error uploading image.');
+        }
+
         // Getting image dimentions
         info(' -- Getting image dimentions.');
         let dimensions = sizeOf(req.file.path);
@@ -203,6 +207,8 @@ export async function imagesCreateImage(req, res) {
         info(' -- Getting live feed.');
         let result = await fetcher(feedURL[source]);
 
+        const location = getFileLocation(process.env.JM_AWS_S3_ASSETS_BUCKET, `${source}/${compressed_name}`);
+
         // Append item
         info(' -- Appending item.');
         let updatedResult = updateCollection(result, collection_id, (element) => {
@@ -212,7 +218,15 @@ export async function imagesCreateImage(req, res) {
                 element.image = [element.image];
             }
 
-            element.image.push({ $: { id: new Date().getTime(), title: compressed_name, url: response.Location, width: dimensions.width, height: dimensions.height } });
+            element.image.push({ 
+                $: { 
+                    id: new Date().getTime(), 
+                    title: compressed_name, 
+                    url: location, 
+                    width: dimensions.width, 
+                    height: dimensions.height 
+                } 
+            });
 
             return element;
         });
