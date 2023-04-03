@@ -325,17 +325,17 @@ export async function imagesCollectionDestroy(req, res) {
 
         // Delete every image on collection
         info(' -- Deleting images in collection.');
-        if (Array.isArray(collection.image)) {
+        if (collection.image && Array.isArray(collection.image)) {
             // Delete every image on collection
             for (const image of collection.image) {
                 const key = image.$.title;
                 await removeImage(key, source);
             }
-        } else if (collection.image !== null) {
+        } else if (collection.image) {
             const key = collection.image.$.title;
             await removeImage(key, source);
         }
-
+        
         // Exclude collection
         info(' -- Removing collection.');
         result.resources.collection = result.resources.collection.filter(item => item.$.id != collection_id);
@@ -385,7 +385,7 @@ export async function imagesImageDestroy(req, res) {
         info(' -- Deleting image file.');
         let response = await removeImage(key, source);
 
-        if (response.$response.httpResponse.statusCode === 204) {
+        if (response.$metadata.httpStatusCode === 204) {
             // Get live feed
             info(' -- Getting live feed.');
             let result = await fetcher(feedURL[source]);

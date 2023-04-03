@@ -118,8 +118,8 @@ export async function podcastsCreate(req, res) {
       const pubDateLocalStr = moment(pubDateStr).format('YYYY-MM-DDTHH:mm:ss');
   
       const backupResponse = await backupFeed(res);
-  
-      if (!isDefined(backupResponse) || backupResponse.$response.httpResponse.statusCode !== 200) {
+
+      if (!isDefined(backupResponse) || backupResponse.$metadata.httpStatusCode !== 200) {
         throw new Error('Feed could not be backed up.');
       }
   
@@ -133,7 +133,7 @@ export async function podcastsCreate(req, res) {
   
       const feedResponse = await updateFeed(feed);
   
-      if (!isDefined(feedResponse) || feedResponse.$response.httpResponse.statusCode !== 200) {
+      if (!isDefined(feedResponse) || feedResponse.$metadata.httpStatusCode !== 200) {
         throw new Error('Feed could not be updated.');
       }
   
@@ -213,7 +213,7 @@ export async function podcastsUpdate(req, res) {
         let backupResponse = await backupFeed(res);
         // Validate backup response
         info(' -- Validating backup.');
-        if (isDefined(backupResponse) && backupResponse.$response.httpResponse.statusCode === 200) {
+        if (isDefined(backupResponse) && backupResponse.$metadata.httpStatusCode === 200) {
             // Validate form data
             info(' -- Parsing form data.');
             // Create feed object
@@ -228,7 +228,7 @@ export async function podcastsUpdate(req, res) {
             // Update feed
             let feedResponse = await updateFeed(feed);
             // Respond to response
-            if (isDefined(feedResponse) && feedResponse.$response.httpResponse.statusCode === 200) {
+            if (isDefined(feedResponse) && feedResponse.$metadata.httpStatusCode === 200) {
                 // Set notice
                 setNotice(res, 'Podcast episode updated!');
                 // Respond
