@@ -61,6 +61,10 @@ function createCookieExpirationDate() {
   return date;
 }
 
+let cspDefault = [
+  "https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.27.3/ui/icons.svg"
+];
+
 let cspJScripts = [
     "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js",
@@ -106,7 +110,7 @@ let cspFonts = [
 
 function setSecurityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy-Report-Only', 
-    `default-src 'self'; script-src 'self' ${cspJScripts.join(" ")}; style-src 'self' 'unsafe-inline' ${cspStyles.join(" ")}; font-src 'self' ${cspFonts.join(" ")}; img-src 'self' data: https:; frame-src 'self'`);
+    `default-src 'self' ${cspDefault.join(" ")}; script-src 'self' ${cspJScripts.join(" ")}; style-src 'self' 'unsafe-inline' ${cspStyles.join(" ")}; font-src 'self' ${cspFonts.join(" ")}; img-src 'self' data: https:; frame-src 'self'`);
   res.setHeader('Strict-Transport-Security', 
     'max-age=31536000; includeSubDomains');
   next();

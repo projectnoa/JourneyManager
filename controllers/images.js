@@ -24,19 +24,11 @@ import { setNotice, getFileLocation } from './../helpers/helper.js';
 import { submitS3File, deleteS3File } from './../helpers/s3.js';
 import { jsonToXML } from './../helpers/xml.js';
 
+import * as constants from './../helpers/constants.js';
+
 /**
  * Variables
  */
-
-const feedURL = {
-    posts: 'https://s3-us-west-2.amazonaws.com/assets.ajourneyforwisdom.com/posts/settings.xml', 
-    global: 'https://s3-us-west-2.amazonaws.com/assets.ajourneyforwisdom.com/global/settings.xml', 
-    emails: 'https://s3-us-west-2.amazonaws.com/assets.ajourneyforwisdom.com/emails/settings.xml'
-};
-
-const sources = ['posts', 'global', 'emails'];
-
-const resourceKey = 'settings.xml';
 
 /**
  *  Methods
@@ -51,12 +43,12 @@ export async function imagesIndex(req, res) {
 
         let results = [];
 
-        if (!sources.includes(tab)) tab = sources[0];
+        if (!constants.ASSET_SOURCE_KEYS.includes(tab)) tab = constants.ASSET_SOURCE_KEYS[0];
 
         // Parse posts
         info(' -- Parsing items.');
-        for (const source of sources) {
-            const url = feedURL[source];
+        for (const source of constants.ASSET_SOURCE_KEYS) {
+            const url = constants.ASSET_SOURCES[source];
             let result = await fetcher(url);
 
             let items = parseImages(result);
@@ -93,11 +85,11 @@ export async function imagesCreateCollection(req, res) {
     let source = req.body.source;
 
     try {
-        if (!sources.includes(source)) throw new Error('Missing source!')
+        if (!constants.ASSET_SOURCE_KEYS.includes(source)) throw new Error('Missing source!')
 
         // Get live feed
         info(' -- Getting live feed.');
-        let result = await fetcher(feedURL[source]);
+        let result = await fetcher(constants.ASSET_SOURCES[source]);
 
         // If no items then initialize
         if (result.resources.collection == undefined) {
@@ -117,8 +109,8 @@ export async function imagesCreateCollection(req, res) {
         // Publish feed update
         info(' -- Publishing feed updates.');
         let response = await submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
-            Key: `${source}/${resourceKey}`,
+            Bucket: constants.ASSETS_S3_BUCKET,
+            Key: `${source}/${constants.SETTINGS_XML}`,
             Body: jsonToXML(result),
             ACL: 'public-read'
         });
@@ -174,7 +166,7 @@ export async function imagesCreateImage(req, res) {
 
         let source = req.body.source;
 
-        if (!sources.includes(source)) throw new Error('Missing source!')
+        if (!constants.ASSET_SOURCE_KEYS.includes(source)) throw new Error('Missing source!')
 
         // Compressing image
         info(' -- Compressing images.');
@@ -205,9 +197,9 @@ export async function imagesCreateImage(req, res) {
 
         // Get live feed
         info(' -- Getting live feed.');
-        let result = await fetcher(feedURL[source]);
+        let result = await fetcher(constants.ASSET_SOURCES[source]);
 
-        const location = getFileLocation(process.env.JM_AWS_S3_ASSETS_BUCKET, `${source}/${compressed_name}`);
+        const location = getFileLocation(constants.ASSETS_S3_BUCKET, `${source}/${compressed_name}`);
 
         // Append item
         info(' -- Appending item.');
@@ -234,8 +226,8 @@ export async function imagesCreateImage(req, res) {
         // Publish feed update
         info(' -- Publishing feed updates.');
         response = await submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
-            Key: `${source}/${resourceKey}`,
+            Bucket: constants.ASSETS_S3_BUCKET,
+            Key: `${source}/${constants.SETTINGS_XML}`,
             Body: jsonToXML(updatedResult),
             ACL: 'public-read'
         });
@@ -313,11 +305,11 @@ export async function imagesCollectionDestroy(req, res) {
     let source = req.body.source;
 
     try {
-        if (!sources.includes(source)) throw new Error('Missing source!')
+        if (!constants.ASSET_SOURCE_KEYS.includes(source)) throw new Error('Missing source!')
 
         // Get live feed
         info(' -- Getting live feed.');
-        let result = await fetcher(feedURL[source]);
+        let result = await fetcher(constants.ASSET_SOURCES[source]);
 
         // Find collection
         info(' -- Finding collection.');
@@ -343,8 +335,8 @@ export async function imagesCollectionDestroy(req, res) {
         // Publish feed update
         info(' -- Publishing feed updates.');
         let response = await submitS3File({
-            Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
-            Key: `${source}/${resourceKey}`,
+            Bucket: constants.ASSETS_S3_BUCKET,
+            Key: `${source}/${constants.SETTINGS_XML}`,
             Body: jsonToXML(result),
             ACL: 'public-read'
         });
@@ -379,7 +371,7 @@ export async function imagesImageDestroy(req, res) {
     let source = req.body.source;
 
     try {
-        if (!sources.includes(source)) throw new Error('Missing source!')
+        if (!constants.ASSET_SOURCE_KEYS.includes(source)) throw new Error('Missing source!')
 
         // Remove image from S3
         info(' -- Deleting image file.');
@@ -388,7 +380,7 @@ export async function imagesImageDestroy(req, res) {
         if (response.$metadata.httpStatusCode === 204) {
             // Get live feed
             info(' -- Getting live feed.');
-            let result = await fetcher(feedURL[source]);
+            let result = await fetcher(constants.ASSET_SOURCES[source]);
 
             // Filter item
             info(' -- Filtering image feed.');
@@ -405,8 +397,8 @@ export async function imagesImageDestroy(req, res) {
             // Publish feed update
             info(' -- Publishing feed updates.');
             let response = await submitS3File({
-                Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
-                Key: `${source}/${resourceKey}`,
+                Bucket: constants.ASSETS_S3_BUCKET,
+                Key: `${source}/${constants.SETTINGS_XML}`,
                 Body: jsonToXML(updatedResult),
                 ACL: 'public-read'
             });
@@ -437,7 +429,7 @@ let parseImages = (result) => {
 }
 
 let removeImage = async (key, source) => {
-    return await deleteS3File(process.env.JM_AWS_S3_ASSETS_BUCKET, source + '/' + key);
+    return await deleteS3File(constants.ASSETS_S3_BUCKET, `${source}/${key}`);
 }
 
 let updateCollection = (result, id, updateCallback) => {
@@ -461,7 +453,7 @@ let uploadImage = async (file, source) => {
     });
     // Submit to S3
     return await submitS3File({
-        Bucket: process.env.JM_AWS_S3_ASSETS_BUCKET,
+        Bucket: constants.ASSETS_S3_BUCKET,
         Key: `${source}/${file.filename}`,
         Body: fileStream,
         ACL: 'public-read'

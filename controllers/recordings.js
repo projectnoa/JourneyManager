@@ -4,36 +4,34 @@
  * Required External Modules
  */
 
- import { promisify } from 'util';
+import { promisify } from 'util';
 
- import dateFormat from 'dateformat';
+import dateFormat from 'dateformat';
 
- import { unlink as _unlink, createReadStream } from 'fs';
- 
- import Season from './../models/season.js';
- 
- import fetcher from './../helpers/fetcher.js';
- import requestProcessor from './../helpers/audioUpload.js';
- 
- import { info, error, warn } from './../helpers/winston.js';
- import { setNotice, getFileLocation } from './../helpers/helper.js';
- 
- import { submitS3File } from './../helpers/s3.js';
- import { jsonToXML } from './../helpers/xml.js';
- 
- /**
-  * Variables
-  */
- 
- const feedURL = 'https://s3-us-west-2.amazonaws.com/podcasts.ajourneyforwisdom.com/settings.xml';
- const podcastURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/podcast.xml';
- const resourceKey = 'settings.xml';
+import { unlink as _unlink, createReadStream } from 'fs';
 
- const podcastFilesFolder = '2021';
- 
- /**
-  *  Methods
-  */
+import Season from './../models/season.js';
+
+import fetcher from './../helpers/fetcher.js';
+import requestProcessor from './../helpers/audioUpload.js';
+
+import { info, error, warn } from './../helpers/winston.js';
+import { setNotice, getFileLocation } from './../helpers/helper.js';
+
+import { submitS3File } from './../helpers/s3.js';
+import { jsonToXML } from './../helpers/xml.js';
+
+import * as constants from './../helpers/constants.js';
+
+/**
+ * Variables
+ */
+
+const podcastFilesFolder = new Date().getFullYear().toString();
+
+/**
+ *  Methods
+ */
  
 export async function recordingsIndex(req, res) {
     try {
@@ -42,11 +40,14 @@ export async function recordingsIndex(req, res) {
         // Parse posts
         info(' -- Parsing items.');
         // Get feed
-        let feed = await fetcher(feedURL);
+        let feed = await fetcher(constants.RECORDINGS_XML_URL);
         // Get published list
-        let podcast = await fetcher(podcastURL);
+        let podcast = await fetcher(constants.FEED_XML_URL);
         // Parse published list
-        let published = podcast.rss.channel.item.map(item => ( { url: item.guid._, pubdate: item.pubDate } ));
+        let published = podcast.rss.channel.item.map(item => ( { 
+            url: item.guid._, 
+            pubdate: item.pubDate 
+        } ));
         // Parse recordings
         let items = parseRecordings(feed, published);
         // Render page
@@ -71,14 +72,14 @@ export async function recordingsCreateSeason(req, res) {
     try {
         // Get live feed
         info(' -- Getting live feed.');
-        let feed = await fetcher(feedURL);
+        let feed = await fetcher(constants.RECORDINGS_XML_URL);
         // If no items then initialize
         if (feed.resources.collection == undefined) {
             feed.resources = { collection: [] };
         }
         // Append item
         info(' -- Appending item.');
-        feed.resources.collection.push({ $: { season: (result.resources.length + 1), id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
+        feed.resources.collection.push({ $: { season: (feed.resources.collection.length + 1), id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
         // Update feed
         let response = await updateFeed(feed);
 
@@ -124,7 +125,7 @@ export async function recordingsCreateFile(req, res) {
         }
         // Get image collection id
         let collection_id = req.body.collection_id;
-        let length = req.body.filesize;
+        let length = typeof req.body.filesize === 'object' ? req.body.filesize[0] : req.body.filesize;
         let duration = req.body.duration;
         // Upload file
         info(' -- Uploading image file.');
@@ -141,20 +142,25 @@ export async function recordingsCreateFile(req, res) {
         fileDeleted = true;
         // Get live feed
         info(' -- Getting live feed.');
-        let feed = await fetcher(feedURL);
+        let feed = await fetcher(constants.RECORDINGS_XML_URL);
 
-        const location = getFileLocation(process.env.JM_AWS_S3_FILE_BUCKET, `${podcastFilesFolder}/${req.file.filename}`);
+        const location = getFileLocation(constants.PODCAST_S3_BUCKET, `${podcastFilesFolder}/${req.file.filename}`);
 
         // Append item
         info(' -- Appending item.');
         let updatedFeed = updateCollection(feed, collection_id, (element) => {
+            let episode = 1;
+
             if (element.file == undefined) {
                 element.file = [];
-            } else if (!Array.isArray(element.file)) {
-                element.file = [element.file];
+            } else {
+                if (!Array.isArray(element.file)) {
+                    element.file = [element.file];
+                }
+
+                episode = parseInt(element.file[element.file.length - 1].$.episode) + 1;
             }
 
-            let episode = parseInt(element.file[element.file.length - 1].$.episode) + 1;
             let title = `Episode ${episode}.mp3`
 
             let date = new Date();
@@ -206,7 +212,7 @@ let uploadFile = async (req) => {
     // Upload file
     info(' -- Uploading podcast file.');
     return await submitS3File({
-        Bucket: process.env.JM_AWS_S3_FILE_BUCKET,
+        Bucket: constants.PODCAST_S3_BUCKET,
         Key: `${podcastFilesFolder}/${req.file.filename}`,
         Body: fileStream,
         ACL: 'public-read',
@@ -218,8 +224,8 @@ let updateFeed = async (feed) => {
     // Publish feed update
     info(' -- Publishing feed updates.');
     return await submitS3File({
-        Bucket: process.env.JM_AWS_S3_FILE_BUCKET,
-        Key: resourceKey,
+        Bucket: constants.PODCAST_S3_BUCKET,
+        Key: constants.SETTINGS_XML,
         Body: jsonToXML(feed),
         ACL: 'public-read'
     });

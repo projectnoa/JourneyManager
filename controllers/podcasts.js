@@ -18,14 +18,11 @@ import { backupFile, submitS3File } from './../helpers/s3.js';
 import { jsonToXML } from './../helpers/xml.js';
 import { getPodcasts, publishPodcast, publishTag } from './../helpers/wordpress.js';
 
+import * as constants from './../helpers/constants.js';
+
 /**
  * Variables
  */
-
-const feedURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/podcast.xml';
-const resourceKey = 'podcast.xml';
-const podcastURL = 'https://s3.us-west-2.amazonaws.com/podcasts.ajourneyforwisdom.com/';
-const podcastImageURL = podcastURL + 'images/DTMG-profile-v5.jpeg';
 
 let feed_cache = null;
 
@@ -254,9 +251,9 @@ let backupFeed = async (res) => {
     // Back up feed
     info(' -- Backing up podcast feed.');
     let response = await backupFile({
-        CopySource: process.env.JM_AWS_S3_RSS_BUCKET + '/' + resourceKey,
-        Bucket: process.env.JM_AWS_S3_RSS_BUCKET + '/backup',
-        Key: resourceKey.split('.').join('-' + Date.now() + '.')
+        CopySource: `${constants.RSS_S3_BUCKET}/${constants.RSS_S3_FOLDER}/${constants.FEED_XML}`,
+        Bucket: `${constants.RSS_S3_BUCKET}`,
+        Key: `${constants.RSS_S3_FOLDER}/${constants.BACKUP_S3_FOLDER}/${constants.FEED_XML.split('.').join('-' + Date.now() + '.')}`
     });
 
     return response;
@@ -278,7 +275,7 @@ let createFeedItem = (data, pubDate) => {
         'link': data.post_url,
         'itunes:image': {
             $: {
-                href: podcastImageURL
+                href: constants.LOGO_IMAGE_URL
             }
         },
         description: comply(data.description),
@@ -362,7 +359,7 @@ let createPostItem = async (req, data, pubDate) => {
         meta: {
             audio_file: data.location,
             date_recorded: moment().format("DD-MM-yyyy"),
-            duration: new Date(data.duration * 1000).toISOString().substring(11, 8),
+            duration: new Date(parseInt(data.duration) * 1000).toISOString().split("T")[1].split(".")[0].replace("00:", ""),
             episode_type: "audio",
             explicit: data.explicit === 'yes' ? "true" : "false",
             filesize: Math.trunc(size) + " Mb",
@@ -381,8 +378,8 @@ let updateFeed = async (feed) => {
     // Publish feed update
     info(' -- Publishing feed updates.');
     return await submitS3File({
-        Bucket: process.env.JM_AWS_S3_RSS_BUCKET,
-        Key: resourceKey,
+        Bucket: `${constants.RSS_S3_BUCKET}`,
+        Key: `${constants.RSS_S3_FOLDER}/${constants.FEED_XML}`,
         Body: jsonToXML(feed),
         ACL: 'public-read',
         ContentType: 'application/rss+xml',
@@ -423,7 +420,7 @@ let createTags = async (tags, token) => {
 }
 
 let refresh_cookie = (req) => {
-    return req.cookies['_JourneyManager_fresh'] === 'true';
+    return req.cookies[constants.REFRESH_COOKIE] === 'true';
 }
 
 let retrieve_feed = async (fresh=false) => {
@@ -431,7 +428,7 @@ let retrieve_feed = async (fresh=false) => {
     if (fresh == 'true' || fresh === true || !isDefined(feed_cache)) {
         // Get live feed
         info(' -- Getting live feed.');
-        feed_cache = await fetcher(feedURL);
+        feed_cache = await fetcher(constants.FEED_XML_URL);
     }
     // Return feed data 
     return feed_cache;

@@ -4,6 +4,8 @@ import { stripHtml } from 'string-strip-html';
 import path from 'path'
 import { fileURLToPath } from 'url'
 
+import * as constants from './../helpers/constants.js';
+
 const getDirName = function (moduleUrl) {
     const filename = fileURLToPath(moduleUrl)
     return path.dirname(filename)
@@ -14,7 +16,7 @@ export {
 }
 
 export function getFileLocation(bucket, key) {
-    return `https://s3-us-west-2.amazonaws.com/${bucket}/${key}`;
+    return `${constants.AWS_URL}/${bucket}/${key}`;
 }
 
 export function fileFilter(req, file, cb) {
@@ -37,7 +39,7 @@ export function setNotice(res, message) {
 }
 
 export function isStrEq(str, val) {
-    return (this.isDefined(str) && (typeof str === 'string' || str instanceof String) && str.toLowerCase() == val.toLowerCase())
+    return (isDefined(str) && (typeof str === 'string' || str instanceof String) && str.toLowerCase() == val.toLowerCase())
 }
 
 /**
@@ -110,7 +112,7 @@ export function stripHTML(str) {
 }
 
 export function clearHTMLStyles(str) {
-    if (!this.isDefined(str)) return ' - ';
+    if (!isDefined(str)) return ' - ';
     if (typeof str != String) return str;
   
     str = str.replace(/<strong><br><\/strong>/g, '<br>');

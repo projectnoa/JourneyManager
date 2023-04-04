@@ -11,8 +11,8 @@ class Feed {
 
         // Set properties
         this.title = sanitize(req.body.title);
-        this.description = clearHTMLStyles(helpers.sanitize(req.body.description));
-        this.description += clearHTMLStyles(helpers.sanitize(req.body.info));
+        this.description = clearHTMLStyles(sanitize(req.body.description));
+        this.description += clearHTMLStyles(sanitize(req.body.info));
         this.season = req.body.season;
         this.episode = req.body.episode;
         this.explicit = (req.body.explicit === 'on' || req.body.explicit == 'true') ? 'yes' : 'no';
@@ -33,11 +33,20 @@ class Feed {
         this.tags = [];
         this.keywords = [];
         
-        try {
-            this.tags = JSON.parse(req.body.keywords);
-            this.keywords = this.tags.map(tag => tag.value);
-        } catch (err) {
-            warn(' -- Tags could not be processed.' + err.message);
+        if (!isDefined(req.body.keywords)) return;
+
+        if (typeof req.body.keywords === 'string' && req.body.keywords.length > 0) {
+            if (req.body.keywords.startsWith('[')) {
+                try {
+                    this.tags = JSON.parse(req.body.keywords);
+                    this.keywords = this.tags.map(tag => tag.value);
+                } catch (err) {
+                    warn(' -- Tags could not be processed.' + err.message);
+                }
+            } else {
+                this.tags = req.body.keywords.split(',');
+                this.keywords = this.tags;
+            }
         }
     }
 };

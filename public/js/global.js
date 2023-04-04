@@ -1,4 +1,6 @@
 
+const REFRESH_COOKIE = '_JourneyManager_fresh';
+
 // Add onPageLoad event
 window.addEventListener("load", () => {
     const meta = document.querySelector('meta[name="page-id"]');
@@ -20,7 +22,7 @@ window.addEventListener("load", () => {
 
 let refreshPage = () => {
     const date = addMinutes(new Date(), 1);
-    document.cookie = '_JourneyManager_fresh=true; expires=' + date.toGMTString() + ';';
+    document.cookie = `${REFRESH_COOKIE}=true; expires=${date.toGMTString()};`;
 
     location.reload();
 };

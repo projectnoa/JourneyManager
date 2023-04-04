@@ -21,12 +21,16 @@ class Season {
 
         return fileList.map(file => {
             const { id, title, url, episode, length, duration, date } = file.$;
-            const publishData = published.find(i => i.url === url);
+            const publishData = published.find(i => this.getID(i.url) == this.getID(url));
             const isPublished = publishData !== undefined && publishData !== null;
             const pubDate = isPublished ? dateFormat(new Date(publishData.pubdate), baseDateFormat) : ' - ';
 
             return { id, title, url, episode, length, duration, date: dateFormat(new Date(date), baseDateFormat), published: isPublished, pubdate: pubDate };
         });
+    }
+
+    getID(url) {
+        return url.split('/')[5].split('-')[0];
     }
 };
 
