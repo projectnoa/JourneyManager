@@ -1,26 +1,28 @@
-const util = require("util");
-const path = require("path");
-const multer = require("multer");
+import { promisify } from "util";
+import { join } from "path";
+import multer, { diskStorage } from "multer";
 
-var storage = multer.diskStorage({
+import { getDirName } from './helper.js';
+
+let storage = diskStorage({
   destination: (req, file, callback) => {
-    callback(null, path.join(`${__dirname}/../uploads`));
+    callback(null, join(`${getDirName(import.meta.url)}/../uploads`));
   },
   filename: (req, file, callback) => {
     const match = ["image/png", "image/jpeg"];
 
     if (match.indexOf(file.mimetype) === -1) {
-      var message = `${file.originalname} is invalid. Only accept png/jpeg.`;
+      let message = `${file.originalname} is invalid. Only accept png/jpeg.`;
       
       return callback(message, null);
     }
 
-    var filename = `${Date.now()}-ajfw-${file.originalname}`;
+    let filename = `${Date.now()}-ajfw-${file.originalname}`;
 
     callback(null, filename);
   }
 });
 
-var uploadFiles = multer({ storage: storage }).array("multi-files", 4);
-var uploadImagesMiddleware = util.promisify(uploadFiles);
-module.exports = uploadImagesMiddleware;
+let uploadFiles = multer({ storage: storage }).array("multi-files", 4);
+let uploadImagesMiddleware = promisify(uploadFiles);
+export default uploadImagesMiddleware;

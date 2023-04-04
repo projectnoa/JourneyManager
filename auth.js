@@ -4,8 +4,9 @@
  * Required External Modules
  */
 
-const passport = require('passport');
-const passportStrategy = require('./auth-strategy');
+import passport from 'passport';
+
+import WordPressStrategy from './auth-strategy.js';
 
 /**
  *  App Configuration
@@ -19,7 +20,7 @@ passport.deserializeUser(function(obj, cb) {
     cb(null, obj);
 });
 
-passport.use(new passportStrategy({
+passport.use(new WordPressStrategy({
     clientID: process.env.JM_WP_AUTH_ID,
     clientSecret: process.env.JM_WP_AUTH_SEC,
     callbackURL: process.env.JM_DOMAIN + '/auth/wordpress/callback',
@@ -36,4 +37,4 @@ passport.use(new passportStrategy({
   }
 ));
 
-module.exports = passport;
+export default passport;

@@ -1,8 +1,8 @@
 extends ../layout
 
 block head-content
-  script(src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.js", integrity="sha512-9WciDs0XP20sojTJ9E7mChDXy6pcO0qHpwbEJID1YVavz2H6QBz5eLoDD8lseZOb2yGT8xDNIV7HIe1ZbuiDWg==", crossorigin="anonymous")
-  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.css", integrity="sha512-bbUR1MeyQAnEuvdmss7V2LclMzO+R9BzRntEE57WIKInFVQjvX7l7QZSxjNDt8bg41Ww05oHSh0ycKFijqD7dA==", crossorigin="anonymous")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js", integrity="sha512-U2WE1ktpMTuRBPoCFDzomoIorbOyUv0sP8B+INA3EzNAhehbzED1rOJg6bCqPf/Tuposxb5ja/MAUnC8THSbLQ==", crossorigin="anonymous", referrerpolicy="no-referrer")
+  link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css", integrity="sha512-jU/7UFiaW5UBGODEopEqnbIAHOI8fO6T99m7Tsmqs2gkdujByJfkCbbfPSN4Wlqlb9TGnsuC0YgUgWkRBK7B9A==", crossorigin="anonymous", referrerpolicy="no-referrer")
 
   link(rel="stylesheet" href="/css/recordings.css")
   script(src="/js/recordings.js")
@@ -30,22 +30,26 @@ block layout-content
 
   div.row.no-gutters
     div.col
-      button.btn.btn-sm.text-white.float-right(type="button" data-toggle="modal" data-target="#createCollection")
-        i.fas.fa-plus.fa-2x
+      button.btn.btn-primary.text-white.float-right(type="button" data-toggle="modal" data-target="#createCollection") Start New Season
+
+  br
 
   input(type="hidden", name="duration")
   //- input(type="hidden", name="collection")
 
-  each item in items
+  each item, index in items
     div.card
         div.card-header(id=`heading-${item.id}`)
           div.row.no-gutters
             div.col
               h1 Season !{item.season}
             div.col-auto
-              button.btn.btn-link.p-1.float-right(type='button', data-toggle='collapse', data-target=`#collapse-${item.id}`, aria-expanded='false', aria-controls=item.id)
-                i.fas.fa-angle-down.fa-2x
-        div.collapse(id=`collapse-${item.id}`, aria-labelledby=`heading-${item.id}`)
+              button.btn.btn-link.p-1.float-right(type='button', data-toggle='collapse', data-target=`#collapse-${item.id}`, aria-expanded=`${index == 0 ? 'true' : 'false'}`, aria-controls=item.id)
+                if index == 0
+                  i.fas.fa-angle-up.fa-2x
+                else
+                  i.fas.fa-angle-down.fa-2x
+        div(id=`collapse-${item.id}`, class=`${index == 0 ? 'collapse show' : 'collapse'}` aria-labelledby=`heading-${item.id}`)
           div.card-body
             div.row.no-gutters.mb-3
               div.col

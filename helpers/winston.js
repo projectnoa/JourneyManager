@@ -4,32 +4,32 @@
  * Required External Modules
  */
 
-const appRoot = require('app-root-path');
-const winston = require('winston');
+import appRoot from 'app-root-path';
+import { createLogger, transports as _transports, format as _format } from 'winston';
 
 /**
  * Variables
  */
 
-const logger = winston.createLogger({
+const logger = createLogger({
   transports: [
-    new winston.transports.File({
+    new _transports.File({
       filename: `${appRoot}/log/app.log`,
       level: 'info',
-      format: winston.format.json(),
+      format: _format.json(),
       maxsize: 5242880, // 5MB
       maxFiles: 5,
       colorize: false
     }),
-    new winston.transports.Http({
+    new _transports.Http({
       level: 'warn',
-      format: winston.format.json()
+      format: _format.json()
     }),
-    new winston.transports.Console({
+    new _transports.Console({
       level: 'info',
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
+      format: _format.combine(
+        _format.colorize(),
+        _format.simple()
       )
     })
   ],
@@ -42,4 +42,23 @@ logger.stream = {
   },
 };
 
-module.exports = logger;
+export function error(message) {
+  log('error', message);
+}
+
+export function info(message) {
+  log('info', message);
+}
+
+export function warn(message) {
+  log('warn', message);
+}
+
+let log = function(level, message) {
+  logger.log({
+    level: level,
+    message: message
+  });
+}
+
+export default logger;

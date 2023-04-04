@@ -4,20 +4,19 @@
  * Required External Modules
  */
 
-var parseString = require("xml2js").parseString;
-var xml2js = require("xml2js");
+import { parseString, Builder } from "xml2js";
 
 /**
  * Methods
  */
 
-exports.jsonToXML = (json) => {
+export function jsonToXML(json) {
     // Convert to XML
-    var builder = new xml2js.Builder({ cdata: true });
+    let builder = new Builder({ cdata: true });
     return builder.buildObject(json);
 }
 
-exports.parseData = (data) => {
+export function parseData(data) {
     return new Promise(function(resolve, reject) {
         // Parse data
         parseString(data, { explicitArray: false, trim: true, normalize: true }, function(err, result) {

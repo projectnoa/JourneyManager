@@ -1,7 +1,9 @@
 
+const REFRESH_COOKIE = '_JourneyManager_fresh';
+
 // Add onPageLoad event
 window.addEventListener("load", () => {
-    let meta = document.querySelector('meta[name="page-id"]');
+    const meta = document.querySelector('meta[name="page-id"]');
 
     if (meta !== undefined && meta !== null) {
         const pageFunction = meta.content + 'Setup';
@@ -18,13 +20,17 @@ window.addEventListener("load", () => {
     setDeleteBehavior();
 });
 
-var refreshPage = () => {
-    var date = addMinutes(new Date(), 1);
-    document.cookie = '_JourneyManager_fresh=true; expires=' + date.toGMTString() + ';';
+let refreshPage = () => {
+    const date = addMinutes(new Date(), 1);
+    document.cookie = `${REFRESH_COOKIE}=true; expires=${date.toGMTString()};`;
 
     location.reload();
 };
 
 function addMinutes(date, minutes) {
     return new Date(date.getTime() + minutes*60000);
+}
+
+function errorSetup() {
+    // NOTHING
 }

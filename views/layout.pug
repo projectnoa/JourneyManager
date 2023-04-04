@@ -9,18 +9,18 @@ html
     meta(name="viewport", content="width=device-width, initial-scale=1, shrink-to-fit=no")
     meta(name="theme-color", content="#000000")
 
-    script(src="https://code.jquery.com/jquery-3.5.1.min.js")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js", integrity="sha512-pumBsjNRGGqkPzKHndZMaAG+bir374sORyzM3uulLV14lN5LyykqNk8eEeUlUkB3U0M4FApyaHraT65ihJhDpQ==", crossorigin="anonymous", referrerpolicy="no-referrer")
 
-    script(src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js", integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==", crossorigin="anonymous")
-    script(src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.31/moment-timezone-with-data.js", integrity="sha512-ECoTMVFwwVtxjEBRjUMjviUd6hBjwDhBJI0+3W2YDs+ld5rHHUDr59T15gxwEPkGu5XLmkASUSvPgQe/Tpyodg==", crossorigin="anonymous")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js", integrity="sha512-+H4iLjY3JsKiF2V6N366in5IQHj2uEsGV7Pp/GRcm0fn76aPAk5V8xB6n8fQhhSonTqTXs/klFz4D0GIn6Br9g==", crossorigin="anonymous", referrerpolicy="no-referrer")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data.js", integrity="sha512-lWuI1XloUBHbHQzrGW+f/uAuFA9rvHF5GsAU8Yo1mRevjkG2uChlWTueootXyWRCVtVjpxe85x18CZEt7o62Iw==", crossorigin="anonymous", referrerpolicy="no-referrer")
 
-    link(rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css")
-    script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js")
-    script(src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.min.js", integrity="sha512-7rusk8kGPFynZWu26OKbTeI+QPoYchtxsmPeBqkHIEXJxeun4yJ4ISYe7C6sz9wdxeE1Gk3VxsIWgCZTc+vX3g==", crossorigin="anonymous", referrerpolicy="no-referrer")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/js/bootstrap.bundle.min.js", integrity="sha512-igl8WEUuas9k5dtnhKqyyld6TzzRjvMqLC79jkgT3z02FvJyHAuUtyemm/P/jYSne1xwFI06ezQxEwweaiV7VA==", crossorigin="anonymous", referrerpolicy="no-referrer")
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.2/css/bootstrap.min.css", integrity="sha512-rt/SrQ4UNIaGfDyEXZtNcyWvQeOq0QLygHluFQcSjaGB04IxWhal71tKuzP6K8eYXYB6vJV4pHkXcmFGGQ1/0w==", crossorigin="anonymous", referrerpolicy="no-referrer")
+    
+    link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css", integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==", crossorigin="anonymous", referrerpolicy="no-referrer")
 
-    link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css", integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==", crossorigin="anonymous")
-
-    script(src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js")
+    script(src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.4/axios.min.js", integrity="sha512-LUKzDoJKOLqnxGWWIBM4lzRBlxcva2ZTztO8bTcWPmDSpkErWx0bSP4pdsjNH8kiHAUPaT06UXcb+vOEZH+HpQ==", crossorigin="anonymous", referrerpolicy="no-referrer")
 
     link(rel="stylesheet" href="/css/global.css")
     script(src="/js/global.js")
@@ -46,14 +46,14 @@ html
             ul.navbar-nav.mt-2.mt-lg-0.ml-auto
               li.nav-item
                 a.nav-link(href='/images') Images
-              li.nav-item
-                a.nav-link(href='/posts') Posts
+              //- li.nav-item
+              //-   a.nav-link(href='/posts') Posts
               li.nav-item
                 a.nav-link(href='/podcasts') Episodes
               li.nav-item
                 a.nav-link(href='/recordings') Recordings
-              li.nav-item
-                a.nav-link(href='/tweets') Tweets
+              //- li.nav-item
+              //-   a.nav-link(href='/tweets') Tweets
       //- Top spacer
       div.top-spacer
       //- Content container

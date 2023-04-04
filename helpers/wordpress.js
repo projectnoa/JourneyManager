@@ -4,13 +4,13 @@
  * Required External Modules
  */
 
-var WPAPI = require('wpapi');
+import WPAPI from 'wpapi';
 
 /**
  * Variables 
  */
 
-var wp = new WPAPI({ endpoint: process.env.JM_WP_ENDPOINT + '/wp-json' });
+let wp = new WPAPI({ endpoint: process.env.JM_WP_ENDPOINT + '/wp-json' });
 wp.podcasts = wp.registerRoute( 'wp/v2', 'podcast/(?P<id>)', {
     // Listing any of these parameters will assign the built-in
     // chaining method that handles the parameter:
@@ -21,7 +21,7 @@ wp.podcasts = wp.registerRoute( 'wp/v2', 'podcast/(?P<id>)', {
  *  Methods
  */
 
-exports.getPosts = (token, page=1) => {
+export function getPosts(token, page=1) {
     if (page == undefined) page = 1;
 
     // Get all posts
@@ -32,7 +32,7 @@ exports.getPosts = (token, page=1) => {
     .get()
 }
 
-exports.getPodcasts = (token) => {
+export function getPodcasts(token) {
     // Publish podcast episode
     return wp.podcasts().embed()
     .perPage(2)
@@ -41,27 +41,27 @@ exports.getPodcasts = (token) => {
     .get()
 }
 
-exports.publishPodcast = (item, token) => {
+export function publishPodcast(item, token) {
     // Publish podcast episode
     return wp.podcasts()
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .create(item)
 }
 
-exports.publishPostDraft = (item, token) => {
+export function publishPostDraft(item, token) {
     // Publish post draft
     return wp.posts()
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .create(item)
 }
 
-exports.publishTag = (item, token) => {
+export function publishTag(item, token) {
     return wp.tags()
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .create(item)
 }
 
-exports.getTags = (names, token) => {
+export function getTags(names, token) {
     return wp.tags()
     .setHeaders( 'Authorization', 'Bearer ' + token )
     .param('search', names)

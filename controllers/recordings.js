@@ -4,53 +4,54 @@
  * Required External Modules
  */
 
- const util = require('util');
+import { promisify } from 'util';
 
- var dateFormat = require('dateformat');
+import dateFormat from 'dateformat';
 
- var fs = require('fs');
- 
- var Season = require('./../models/season');
- 
- const fetcher = require('./../helpers/fetcher');
- const requestProcessor = require('./../helpers/audioUpload');
- 
- const winston = require('./../helpers/winston');
- const helpers = require('./../helpers/helper');
- 
- const s3 = require('./../helpers/s3');
- const xml = require('./../helpers/xml');
- 
- /**
-  * Variables
-  */
- 
- const feedURL = 'https://s3-us-west-2.amazonaws.com/podcasts.ajourneyforwisdom.com/settings.xml';
- const podcastURL = 'https://s3-us-west-2.amazonaws.com/rss.ajourneyforwisdom.com/rss/podcast.xml';
- const resourceKey = 'settings.xml';
+import { unlink as _unlink, createReadStream } from 'fs';
 
- const podcastFilesFolder = '2021';
+import Season from './../models/season.js';
+
+import fetcher from './../helpers/fetcher.js';
+import requestProcessor from './../helpers/audioUpload.js';
+
+import { info, error, warn } from './../helpers/winston.js';
+import { setNotice, getFileLocation } from './../helpers/helper.js';
+
+import { submitS3File } from './../helpers/s3.js';
+import { jsonToXML } from './../helpers/xml.js';
+
+import * as constants from './../helpers/constants.js';
+
+/**
+ * Variables
+ */
+
+const podcastFilesFolder = new Date().getFullYear().toString();
+
+/**
+ *  Methods
+ */
  
- /**
-  *  Methods
-  */
- 
-exports.recordingsIndex = async (req, res) => {
+export async function recordingsIndex(req, res) {
     try {
         // Get live feed
-        winston.info(' -- Getting live feed.');
+        info(' -- Getting live feed.');
         // Parse posts
-        winston.info(' -- Parsing items.');
+        info(' -- Parsing items.');
         // Get feed
-        let feed = await fetcher(feedURL);
+        let feed = await fetcher(constants.RECORDINGS_XML_URL);
         // Get published list
-        let podcast = await fetcher(podcastURL);
+        let podcast = await fetcher(constants.FEED_XML_URL);
         // Parse published list
-        let published = podcast.rss.channel.item.map(item => ( { url: item.guid._, pubdate: item.pubDate } ));
+        let published = podcast.rss.channel.item.map(item => ( { 
+            url: item.guid._, 
+            pubdate: item.pubDate 
+        } ));
         // Parse recordings
         let items = parseRecordings(feed, published);
         // Render page
-        winston.info(' -- Rendering page.');
+        info(' -- Rendering page.');
         res.render('./recordings/index', {
             title: 'Recordings',
             authorized: true,
@@ -59,91 +60,107 @@ exports.recordingsIndex = async (req, res) => {
         });
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Recordings', authorized: true });
     }
-};
+}
  
-exports.recordingsCreateSeason = async (req, res) => {
+export async function recordingsCreateSeason(req, res) {
     try {
         // Get live feed
-        winston.info(' -- Getting live feed.');
-        let feed = await fetcher(feedURL);
+        info(' -- Getting live feed.');
+        let feed = await fetcher(constants.RECORDINGS_XML_URL);
         // If no items then initialize
         if (feed.resources.collection == undefined) {
             feed.resources = { collection: [] };
         }
         // Append item
-        winston.info(' -- Appending item.');
-        feed.resources.collection.push({ $: { season: (result.resources.length + 1), id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
+        info(' -- Appending item.');
+        feed.resources.collection.push({ $: { season: (feed.resources.collection.length + 1), id: new Date().getTime(), date: new Date().toISOString().split('T')[0] } });
         // Update feed
-        await updateFeed(feed);
+        let response = await updateFeed(feed);
+
+        if (response.$metadata.httpStatusCode != 200) {
+            throw new Error('Error creating new season.');
+        }
+
         // Set notice
-        helpers.setNotice(res, 'Season created!');
+        setNotice(res, 'Season created!');
         // Respond
-        winston.info(' -- Success.');
+        info(' -- Success.');
         res.redirect('/recordings');
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Upload Recordings', authorized: true });
     }
 }
  
-exports.recordingsCreateFile = async (req, res) => {
-    const unlink = util.promisify(fs.unlink);
+export async function recordingsCreateFile(req, res) {
+    const unlink = promisify(_unlink);
     // Initialize file flag
-    let fileDeleted = true;
+    let fileDeleted = false;
     try {
         // Process request
-        winston.info(' -- Processing request.');
+        info(' -- Processing request.');
         await requestProcessor(req, res);
         // Validate file upload
-        winston.info(' -- Validating request.');
+        info(' -- Validating request.');
         if (req.fileValidationError) {
             // Set notice
-            helpers.setNotice(res, `An error occured: ${req.fileValidationError}`);
+            setNotice(res, `An error occured: ${req.fileValidationError}`);
             // Return error
             return res.redirect('back', 500, { title: 'Recordings', authorized: true });
         } else if (!req.file) {
             // Set notice
-            helpers.setNotice(res, 'An error occured: No file provided');
+            setNotice(res, 'An error occured: No file provided');
             // Return error
             return res.redirect('back', 500, { title: 'Recordings', authorized: true });
         }
-        // Flag file as not deleted
-        fileDeleted = false;
         // Get image collection id
-        var collection_id = req.body.collection_id;
-        var length = req.body.filesize;
-        var duration = req.body.duration;
+        let collection_id = req.body.collection_id;
+        let length = typeof req.body.filesize === 'object' ? req.body.filesize[0] : req.body.filesize;
+        let duration = req.body.duration;
         // Upload file
-        winston.info(' -- Uploading image file.');
+        info(' -- Uploading image file.');
         let response = await uploadFile(req);
+
+        if (response.$metadata.httpStatusCode != 200) {
+            throw new Error('Error uploading image file.');
+        }
+
         // Delete file
-        winston.info(' -- Deleting file.');
+        info(' -- Deleting file.');
         deleteTemp(req.file, unlink);
         // Flag file as deleted 
         fileDeleted = true;
         // Get live feed
-        winston.info(' -- Getting live feed.');
-        let feed = await fetcher(feedURL);
+        info(' -- Getting live feed.');
+        let feed = await fetcher(constants.RECORDINGS_XML_URL);
+
+        const location = getFileLocation(constants.PODCAST_S3_BUCKET, `${podcastFilesFolder}/${req.file.filename}`);
+
         // Append item
-        winston.info(' -- Appending item.');
+        info(' -- Appending item.');
         let updatedFeed = updateCollection(feed, collection_id, (element) => {
+            let episode = 1;
+
             if (element.file == undefined) {
                 element.file = [];
-            } else if (!Array.isArray(element.file)) {
-                element.file = [element.file];
+            } else {
+                if (!Array.isArray(element.file)) {
+                    element.file = [element.file];
+                }
+
+                episode = parseInt(element.file[element.file.length - 1].$.episode) + 1;
             }
 
-            let episode = parseInt(element.file[element.file.length - 1].$.episode) + 1;
             let title = `Episode ${episode}.mp3`
 
             let date = new Date();
@@ -152,7 +169,7 @@ exports.recordingsCreateFile = async (req, res) => {
                 $: { 
                     id: date.getTime(), 
                     title: title, 
-                    url: response.Location, 
+                    url: location, 
                     episode: episode, 
                     length: length,
                     duration: duration,
@@ -165,58 +182,56 @@ exports.recordingsCreateFile = async (req, res) => {
         // Update feed
         await updateFeed(updatedFeed)
         // Set notice
-        helpers.setNotice(res, 'Recording saved!');
+        setNotice(res, 'Recording saved!');
         // Respond
-        winston.info(' -- Success.');
+        info(' -- Success.');
         res.status(200).send({ redirectTo: '/recordings' });
     } catch (err) {
         // Log error message
-        winston.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
         if (!fileDeleted) deleteTemp(req.file, unlink);
         // Set notice
-        helpers.setNotice(res, `An error occured: ${err.message}`);
+        setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'Upload Recordings', authorized: true });
     }
 }
  
-var parseRecordings = (result, published) => {
+let parseRecordings = (result, published) => {
      return result.resources.collection.map(item => new Season(item, published)).reverse();
 }
 
-var uploadFile = async (req) => {
+let uploadFile = async (req) => {
     // Create file stream
-    winston.info(' -- Reading podcast file stream.');
-    var fileStream = fs.createReadStream(req.file.path);
+    info(' -- Reading podcast file stream.');
+    let fileStream = createReadStream(req.file.path);
     fileStream.on('error', function(err) {
-        winston.warn('File Error', err);
+        warn('File Error', err);
     });
     // Upload file
-    winston.info(' -- Uploading podcast file.');
-    let uploadResponse = await s3.submitS3File({
-        Bucket: process.env.JM_AWS_S3_FILE_BUCKET + '/' + podcastFilesFolder,
-        Key: req.file.filename,
+    info(' -- Uploading podcast file.');
+    return await submitS3File({
+        Bucket: constants.PODCAST_S3_BUCKET,
+        Key: `${podcastFilesFolder}/${req.file.filename}`,
         Body: fileStream,
         ACL: 'public-read',
         ContentType: 'audio/mp3'
     });
-
-    return uploadResponse;
 }
 
-var updateFeed = async (feed) => {
+let updateFeed = async (feed) => {
     // Publish feed update
-    winston.info(' -- Publishing feed updates.');
-    let feedResponse = await s3.submitS3File({
-        Bucket: process.env.JM_AWS_S3_FILE_BUCKET,
-        Key: resourceKey,
-        Body: xml.jsonToXML(feed),
+    info(' -- Publishing feed updates.');
+    return await submitS3File({
+        Bucket: constants.PODCAST_S3_BUCKET,
+        Key: constants.SETTINGS_XML,
+        Body: jsonToXML(feed),
         ACL: 'public-read'
     });
 }
 
-var updateCollection = (result, id, updateCallback) => {
+let updateCollection = (result, id, updateCallback) => {
     for (let index = 0; index < result.resources.collection.length; index++) {
         const element = result.resources.collection[index];
 
@@ -229,7 +244,7 @@ var updateCollection = (result, id, updateCallback) => {
     return result;
 }
  
-var deleteTemp = async (file, unlinker) => {
+let deleteTemp = async (file, unlinker) => {
      return await unlinker(file.path);
 }
  

@@ -1,8 +1,8 @@
 extends ../layout
 
 block head-content
-  script(src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.js", integrity="sha512-9WciDs0XP20sojTJ9E7mChDXy6pcO0qHpwbEJID1YVavz2H6QBz5eLoDD8lseZOb2yGT8xDNIV7HIe1ZbuiDWg==", crossorigin="anonymous")
-  link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.2/min/dropzone.min.css", integrity="sha512-bbUR1MeyQAnEuvdmss7V2LclMzO+R9BzRntEE57WIKInFVQjvX7l7QZSxjNDt8bg41Ww05oHSh0ycKFijqD7dA==", crossorigin="anonymous")
+  script(src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.js", integrity="sha512-U2WE1ktpMTuRBPoCFDzomoIorbOyUv0sP8B+INA3EzNAhehbzED1rOJg6bCqPf/Tuposxb5ja/MAUnC8THSbLQ==", crossorigin="anonymous", referrerpolicy="no-referrer")
+  link(rel="stylesheet", href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/dropzone.min.css", integrity="sha512-jU/7UFiaW5UBGODEopEqnbIAHOI8fO6T99m7Tsmqs2gkdujByJfkCbbfPSN4Wlqlb9TGnsuC0YgUgWkRBK7B9A==", crossorigin="anonymous", referrerpolicy="no-referrer")
   
   link(rel="stylesheet" href="/css/images.css")
   script(src="/js/images.js")
@@ -23,7 +23,7 @@ block layout-content
               label(for="title") Title
               input.form-control(type="text", name="title", placeholder="Enter a collection title", required=true)
         div.modal-footer
-          button.btn.btn-primary(data-dismiss='modal', data-behavior='submit') OK
+          button.btn.btn-primary(data-dismiss='modal', data-behavior='submit') Yes
           button.btn.btn-secondary(data-dismiss='modal') Cancel
 
   h1.mt-5.text-white.text-center Posts Images
@@ -35,8 +35,9 @@ block layout-content
           li.nav-item.btn-light(role="presentation")
             a(class=`nav-link ${result.active === true ? 'active' : ''}`, id=`image-${result.title}`, data-toggle="tab", href=`#${result.title}`, role="tab", aria-controls=`${result.title}`, aria-selected=`${result.active === true ? 'true' : 'false'}`) !{result.title}
     div.col-auto
-      button.btn.btn-sm.text-white.float-right(type="button" data-toggle="modal" data-target="#createCollection")
-        i.fas.fa-plus.fa-2x
+      button.btn.btn-primary.text-white.float-right(type="button" data-toggle="modal" data-target="#createCollection") New Collection
+
+  br
 
   div.tab-content(id="images-tabContent")
     each result in results
@@ -46,7 +47,7 @@ block layout-content
             div.card-header(id=`heading-${item.id}`)
               div.row.no-gutters
                 div.col
-                  h3.float-left= item.title
+                  h4.float-left= item.title
                   form(action=`/images/${item.id}/delete`, method="post", data-id=`collectionDelete-${item.id}`)
                     input(type="hidden", name="id", value=item.id)
                     input(type="hidden", name="source", value=result.title)

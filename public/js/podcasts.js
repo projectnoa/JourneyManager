@@ -1,23 +1,21 @@
 
-
-var setupDatepicker = () => {
+let setupDatepicker = () => {
   // Get datepicker element
   let datepickerElement = document.querySelector('[data-behavior~="datetime-picker"]');
 
   const weekday = moment().isoWeekday();
   const sunday = 7;
 
-  if (weekday == sunday) {
-    // Initialize current date
-    var date = new Date();
-  } else {
+  let date = new Date();
+
+  if (weekday != sunday) {
     // Initialize next Sunday
-    var date = moment().add(sunday - weekday, 'days').toDate();
+    date = moment().add(sunday - weekday, 'days').toDate();
   }
 
-  date.setHours(09);
-  date.setMinutes(00);
-  date.setSeconds(00);
+  date.setHours(9);
+  date.setMinutes(0);
+  date.setSeconds(0);
   
   // Set datepicker behavior
   $(datepickerElement).datetimepicker({
@@ -47,7 +45,7 @@ var setupDatepicker = () => {
   });
 };
 
-var setupForm = () => {
+let setupForm = () => {
   // Get form element
   let formElement = document.querySelector('form');
   // Add event listener
@@ -139,7 +137,7 @@ var setupForm = () => {
     });
   }
 
-  var keywordsElement = document.querySelector('input[data-behavior~="keywords"]'),
+  let keywordsElement = document.querySelector('input[data-behavior~="keywords"]'),
     tagify = new Tagify(keywordsElement, {
         whitelist : [],
         // placeholder: 'Add or find keywords, max 8',
@@ -161,29 +159,29 @@ var setupForm = () => {
 
   // Listen to any keystrokes which modify tagify's input
   tagify.on('input', event => {
-    var value = event.detail.value
-    tagify.whitelist = null // reset the whitelist
+    let value = event.detail.value;
+    tagify.whitelist = null; // reset the whitelist
 
     // https://developer.mozilla.org/en-US/docs/Web/API/AbortController/abort
-    controller && controller.abort()
-    controller = new AbortController()
+    controller && controller.abort();
+    controller = new AbortController();
 
     // show loading animation and hide the suggestions dropdown
-    tagify.loading(true).dropdown.hide()
+    tagify.loading(true).dropdown.hide();
 
     fetch('/tags/search?term=' + value, { signal:controller.signal })
       .then(RES => RES.json())
-      .then(function(newWhitelist){
-        tagify.whitelist = newWhitelist // update inwhitelist Array in-place
-        tagify.loading(false).dropdown.show(value) // render the suggestions dropdown
+      .then(function(newWhitelist) {
+        tagify.whitelist = newWhitelist; // update inwhitelist Array in-place
+        tagify.loading(false).dropdown.show(value); // render the suggestions dropdown
       })
   });
 };
 
 function podcastsSetup() {
   $('#episode-data').on('show.bs.modal', (event) => {
-    var button = $(event.relatedTarget); // Button that triggered the modal
-    var content = button.data('content'); // Extract info from data-* attributes
+    const button = $(event.relatedTarget); // Button that triggered the modal
+    const content = button.data('content'); // Extract info from data-* attributes
     // If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
     // Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
     document.querySelector("textarea[name~='episode-data']").value = JSON.stringify(content, null, 4);
@@ -200,41 +198,14 @@ function editPodcastSetup() {
 }
 
 function copyhtml() {
-  var tag = document.querySelector('div[class="modal-body newsletter-html"]');
+  const tag = document.querySelector('div[class="modal-body newsletter-html"]');
 
   copyTextToClipboard(tag.innerHTML);
 }
 
-function fallbackCopyTextToClipboard(text) {
-  var textArea = document.createElement("textarea");
-  textArea.value = text;
-  
-  // Avoid scrolling to bottom
-  textArea.style.top = "0";
-  textArea.style.left = "0";
-  textArea.style.position = "fixed";
-
-  document.body.appendChild(textArea);
-  textArea.focus();
-  textArea.select();
-
-  try {
-    var successful = document.execCommand('copy');
-    var msg = successful ? 'successful' : 'unsuccessful';
-    console.log('Fallback: Copying text command was ' + msg);
-  } catch (err) {
-    console.error('Fallback: Oops, unable to copy', err);
-  }
-
-  document.body.removeChild(textArea);
-}
-
 function copyTextToClipboard(text) {
-  if (!navigator.clipboard) {
-    fallbackCopyTextToClipboard(text);
-    return;
-  }
-  navigator.clipboard.writeText(text).then(function() {
+  navigator.clipboard.writeText(text)
+  .then(function() {
     console.log('Async: Copying to clipboard was successful!');
   }, function(err) {
     console.error('Async: Could not copy text: ', err);
