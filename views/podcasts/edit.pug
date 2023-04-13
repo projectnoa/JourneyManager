@@ -44,7 +44,7 @@ block layout-content
               textarea.form-control(name="description", placeholder="Enter the episode description", required=true)=item.description
             div.form-group
               label(for='keywords') Keywords:
-              input.form-control(type="text", name="keywords", value=`${item.keywords}`, placeholder="", required=true, data-behavior='keywords')
+              input.form-control.no-height-limit(type="text", name="keywords", value=`${item.keywords}`, placeholder="", required=true, data-behavior='keywords')
               small.form-text.text-muted Example: Mental health, Habits, Success.
             div.form-group.row.no-gutters
               div.col-auto

@@ -67,3 +67,9 @@ export function getTags(names, token) {
     .param('search', names)
     .param('per_page', 10)
 }
+
+export function getAllTags(token) {
+    return wp.tags()
+    .setHeaders( 'Authorization', 'Bearer ' + token )
+    .param('per_page', 100)
+}

@@ -110,9 +110,9 @@ export async function podcastsCreate(req, res) {
     try {
       // Validate date data
       info(' -- Parsing date data.');
-      // Format Dates (Adjust to PDT)
-      const pubDateStr = `${req.body.pubDate}:00 PDT`;
-      const pubDateLocalStr = moment(pubDateStr).format('YYYY-MM-DDTHH:mm:ss');
+      // Format Dates
+      const pubDateStr = `${req.body.pubDate}:00`;
+      const pubDateStandardStr = moment(pubDateStr).format('YYYY-MM-DDTHH:mm:ss');
   
       const backupResponse = await backupFeed(res);
 
@@ -138,7 +138,7 @@ export async function podcastsCreate(req, res) {
       const shouldPublishPost = publishPost === 'true' || publishPost === 'on';
   
       if (shouldPublishPost) {
-        const postItem = await createPostItem(req, data, pubDateLocalStr);
+        const postItem = await createPostItem(req, data, pubDateStandardStr);
         info(' -- Publishing podcast post.');
   
         const succeeded = await publishPodcast(postItem, req.session.accessToken);

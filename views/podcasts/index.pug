@@ -104,14 +104,14 @@ block layout-content
             p !{item.description}
           div.card-footer
             span 
-              strong season: 
+              strong season:
               | !{item.season} 
               if item.type.toLowerCase() == 'full'
-                strong.px-1 episode: 
-                | !{item.episode}
+                strong.px-1 episode:
+                | !{item.episode} 
                 strong.px-1 duration:
                 | !{new Date(item.duration * 1000).toISOString().substr(11, 8)}
             span.position-absolute(style='bottom:0; right:5px;')
-              small.text-muted #{item.pubDate} Tokyo time
+              small.text-muted published on #{item.pubDate}
   br
   include ../pagination.pug

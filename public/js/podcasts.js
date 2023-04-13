@@ -2,35 +2,17 @@
 let setupDatepicker = () => {
   // Get datepicker element
   let datepickerElement = document.querySelector('[data-behavior~="datetime-picker"]');
-
-  const weekday = moment().isoWeekday();
-  const sunday = 7;
-
-  let date = new Date();
-
-  if (weekday != sunday) {
-    // Initialize next Sunday
-    date = moment().add(sunday - weekday, 'days').toDate();
-  }
-
-  date.setHours(9);
-  date.setMinutes(0);
-  date.setSeconds(0);
   
   // Set datepicker behavior
   $(datepickerElement).datetimepicker({
       locale: 'en',
       format: 'ddd, D MMM YYYY HH:mm',
-      // minDate: date,
-      defaultDate: date,
+      defaultDate: new Date(),
       sideBySide: false,
       showTodayButton: true,
       showClose: true,
       keepOpen: false,
-      ignoreReadonly: true, 
-      // daysOfWeekDisabled: [1, 2, 3, 4, 5, 6],
-      // enabledHours: [9],
-      // timeZone: 'America/Los_Angeles',
+      ignoreReadonly: true,
       icons: {
           time: 'far fa-clock',
           date: 'far fa-calendar-alt',
@@ -108,18 +90,12 @@ let setupForm = () => {
       removeformatPasted: true,
       btns: [
         ['viewHTML'],
-        ['undo', 'redo'], // Only supported in Blink browsers
-        // ['formatting'],
+        ['undo', 'redo'],
         ['strong', 'em', 'del'],
-        // ['superscript', 'subscript'],
         ['link'],
-        // ['insertImage'],
-        // ['justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'],
         ['unorderedList', 'orderedList'],
-        // ['horizontalRule'],
-        ['removeformat']//,
-        // ['fullscreen']
-    ]
+        ['removeformat']
+      ]
     }
   );
 
@@ -140,19 +116,18 @@ let setupForm = () => {
   let keywordsElement = document.querySelector('input[data-behavior~="keywords"]'),
     tagify = new Tagify(keywordsElement, {
         whitelist : [],
-        // placeholder: 'Add or find keywords, max 8',
         maxTags: 8,
         transformTag: (tag) => {
-          let text = tag.value;
+          if (tag) {
+            let text = tag.value;
 
-          tag.value = text[0].toUpperCase() + text.substring(1);
+            tag.value = text[0].toUpperCase() + text.substring(1);
+          }
         },
         dropdown : {
-            classname     : "color-blue",
-            maxItems      : 5,
-            position      : "text",         // place the dropdown near the typed text
+            classname     : "tags-look",
+            maxItems      : 20,
             closeOnSelect : true,          // keep the dropdown open after selecting a suggestion
-            highlightFirst: true
         }
     }),
     controller;
@@ -174,7 +149,9 @@ let setupForm = () => {
       .then(function(newWhitelist) {
         tagify.whitelist = newWhitelist; // update inwhitelist Array in-place
         tagify.loading(false).dropdown.show(value); // render the suggestions dropdown
-      })
+      }).catch(err => {
+        // console.log(err);
+      });
   });
 };
 

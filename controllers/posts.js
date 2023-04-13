@@ -11,7 +11,7 @@ import requestProcessor from './../helpers/imageUpload.js';
 import { info, error, warn } from './../helpers/winston.js';
 
 import { setNotice, sanitize, postFooter, isDefined } from './../helpers/helper.js';
-import { getPosts, publishPostDraft, getTags, publishTag } from './../helpers/wordpress.js';
+import { getPosts, publishPostDraft, getTags, getAllTags, publishTag } from './../helpers/wordpress.js';
 
 /**
  *  Methods
@@ -114,6 +114,28 @@ export async function postsCreate(req, res) {
         setNotice(res, `An error occured: ${err.message}`);
         // Return error
         res.redirect('back', 500, { title: 'New Post Draft', authorized: true });
+    }
+}
+
+export async function tagsAll(req, res) {
+    try {
+        // Get tags
+        info(' -- Getting tags.');
+        let result = await getAllTags(req.session.accessToken);
+
+        // Parse tags
+        info(' -- Parsing items.');
+        let items = result.map(item => ({ id: item.id, value: item.name}));
+
+        // Prepare response
+        info(' -- Preparing response.');
+
+        res.json(items);
+    } catch (err) {
+        // Log error message
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Set notice
+        setNotice(res, `An error occured: ${err.message}`);
     }
 }
 

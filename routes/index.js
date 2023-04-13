@@ -8,7 +8,7 @@ import { Router } from 'express';
 
 // Controllers
 import { validateSession } from './../controllers/session.js';
-import { postsIndex, postsNew, postsCreate, tagsSearch } from './../controllers/posts.js';
+import { postsIndex, postsNew, postsCreate, tagsSearch, tagsAll } from './../controllers/posts.js';
 import { podcastsIndex, podcastsNew, podcastsCreate, podcastsEdit, podcastsUpdate } from './../controllers/podcasts.js';
 import { recordingsIndex, recordingsCreateSeason, recordingsCreateFile } from './../controllers/recordings.js';
 import { imagesIndex, imagesNew, imagesCreateCollection, imagesCreateImage, imagesProcess, imagesCollectionDestroy, imagesImageDestroy } from './../controllers/images.js';
@@ -39,6 +39,7 @@ router.get('/posts/new', validateSession, postsNew);
 router.post('/posts/create', validateSession, postsCreate);
 
 router.get('/tags/search', validateSession, tagsSearch);
+router.get('/tags', validateSession, tagsAll);
 
 // Podcasts
 router.get('/podcasts', validateSession, podcastsIndex);

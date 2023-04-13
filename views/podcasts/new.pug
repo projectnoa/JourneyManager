@@ -30,10 +30,7 @@ block layout-content
   -var info_template = "<br><p>Email us your questions and suggestions to <a href=\"mailto:donttellmygrandmapodcast@gmail.com\">donttellmygrandmapodcast@gmail.com</a>&nbsp;</p>"
   -info_template += "<br>"
   -info_template += "-&nbsp;Website:&nbsp;<a href=\"https://www.ajourneyforwisdom.com\">www.ajourneyforwisdom.com</a>&nbsp;<br>"
-  -info_template += "-&nbsp;Twitter:&nbsp;<a href=\"https://twitter.com/ajourney4wisdom\">twitter.com/ajourney4wisdom</a>&nbsp;<br>"
-  -info_template += "-&nbsp;Instagram:&nbsp;<a href=\"https://www.instagram.com/ajourneyforwisdom\">instagram.com/ajourneyforwisdom</a>&nbsp;<br>"
-  -info_template += "-&nbsp;YouTube:&nbsp;<a href=\"https://www.youtube.com/channel/UC0xIBmkqFrnmOXbsX6BeMjg\">Don\'t Tell my Grandma</a>&nbsp;<br>"
-  -info_template += "-&nbsp;Pinterest:&nbsp;<a href=\"https://pinterest.com/ajourneyforwisdom\">pinterest.com/ajourneyforwisdom</a>&nbsp;<br>"
+  -info_template += "-&nbsp;YouTube:&nbsp;<a href=\"https://www.youtube.com/@donttellmygrandmapodcast\">Don\'t Tell my Grandma</a>&nbsp;<br>"
   -info_template += "<br>"
   -info_template += "<p>Please consider supporting us on Patreon at <a href=\"https://patreon.com/donttellmygrandma\">patreon.com/donttellmygrandma</a>&nbsp;</p>"
   -info_template += "<br>"
@@ -72,7 +69,7 @@ block layout-content
               small.form-text.text-muted Already set. Click show to modify.
             div.form-group
               label(for='keywords') Keywords:
-              input.form-control(type="text", name="keywords", placeholder="", required=true, data-behavior='keywords')
+              input.form-control.no-height-limit(type="text", name="keywords", placeholder="", required=true, data-behavior='keywords')
               small.form-text.text-muted Example: Mental health, Habits, Success. Avoid using (&amp;), (&lt;), (&gt;), (&quot;), and (&apos;)
             div.form-group.row.no-gutters
               div.col-auto
@@ -105,8 +102,6 @@ block layout-content
               div.col-auto
                 div.input-group.date(data-behavior='datetime-picker', data-target-input="nearest", id='datetimepicker')
                   input.form-control.pubdate(type="text", name="pubDate", data-target='#datetimepicker', data-toggle='datetimepicker', readonly=true)
-              div.col-auto 
-                label(style='margin-bottom: 0;padding-top: 7px;') California Time
             div.form-check
               div.row
                 div.col-lg-6
