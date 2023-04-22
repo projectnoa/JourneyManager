@@ -8,7 +8,7 @@ import { promisify } from 'util';
 
 import dateFormat from 'dateformat';
 
-import { unlink as _unlink, createReadStream } from 'fs';
+import { unlink as _unlink, createReadStream, existsSync, readFileSync, writeFileSync } from 'fs';
 
 import Season from './../models/season.js';
 
@@ -29,6 +29,8 @@ import * as constants from './../helpers/constants.js';
 
 const podcastFilesFolder = new Date().getFullYear().toString();
 
+const filePath = './public/transcripts/index.json';
+
 /**
  *  Methods
  */
@@ -43,13 +45,16 @@ export async function recordingsIndex(req, res) {
         let feed = await fetcher(constants.RECORDINGS_XML_URL);
         // Get published list
         let podcast = await fetcher(constants.FEED_XML_URL);
+
+        const transcriptIndex = await getTranscriptIndex();
+
         // Parse published list
         let published = podcast.rss.channel.item.map(item => ( { 
             url: item.guid._, 
             pubdate: item.pubDate 
         } ));
         // Parse recordings
-        let items = parseRecordings(feed, published);
+        let items = parseRecordings(feed, published, transcriptIndex.transcripts);
         // Render page
         info(' -- Rendering page.');
         res.render('./recordings/index', {
@@ -197,9 +202,41 @@ export async function recordingsCreateFile(req, res) {
         res.redirect('back', 500, { title: 'Upload Recordings', authorized: true });
     }
 }
+
+export async function recordingsTranscript(req, res) {
+    try {
+        // Get transcript file
+        info(' -- Getting transcript file.');
+        let transcriptIndex = await getTranscriptIndex();
+        // If no items then initialize
+        if (transcriptIndex.transcripts == undefined) {
+            transcriptIndex = { transcripts: [] };
+        }
+        const transcriptPath = filePath.replace('index.json', `${req.body.id}.txt`);
+        // Append item
+        info(' -- Appending item.');
+        transcriptIndex.transcripts.push({ id: req.body.id, path: transcriptPath, date: new Date().toISOString().split('T')[0] });
+        // Update transcript file
+        writeFileSync(filePath, JSON.stringify(transcriptIndex), 'utf-8');
+        writeFileSync(transcriptPath, req.body.text, 'utf-8');
+
+        // Set notice
+        setNotice(res, 'Transcript saved!');
+        // Respond
+        info(' -- Success.');
+        res.redirect('/recordings');
+    } catch (err) {
+        // Log error message
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Set notice
+        setNotice(res, `An error occured: ${err.message}`);
+        // Return error
+        res.redirect('back', 500, { title: 'Transcript save', authorized: true });
+    }
+}
  
-let parseRecordings = (result, published) => {
-     return result.resources.collection.map(item => new Season(item, published)).reverse();
+let parseRecordings = (result, published, transcripts) => {
+     return result.resources.collection.map(item => new Season(item, published, transcripts)).reverse();
 }
 
 let uploadFile = async (req) => {
@@ -247,4 +284,49 @@ let updateCollection = (result, id, updateCallback) => {
 let deleteTemp = async (file, unlinker) => {
      return await unlinker(file.path);
 }
- 
+
+async function getTranscriptIndex() {
+    try {
+        // Check if the file exists
+        if (existsSync(filePath)) {
+            return readTranscriptsIndex();
+        } else {
+            return createTranscriptIndex();
+        }
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            return createTranscriptIndex();
+        } else {
+            console.error('Error accessing the file:', err);
+        }
+    }
+
+    return null;
+}
+
+async function createTranscriptIndex() {
+    // If the file does not exist, create it with an empty JSON object
+    console.log('File does not exist. Creating...');
+    
+    try {
+        writeFileSync(filePath, '{ "transcripts": [] }', 'utf-8');
+        
+        return readTranscriptsIndex();
+    } catch (writeErr) {
+        console.error('Error creating the file:', writeErr);
+    }
+
+    return null;
+}
+
+async function readTranscriptsIndex() {
+    try {
+        const data = readFileSync(filePath, 'utf-8');
+    
+        return JSON.parse(data);
+    } catch (err) {
+        console.error('Error:', err);
+    }
+  
+    return null;
+}

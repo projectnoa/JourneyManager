@@ -10,7 +10,7 @@ import { Router } from 'express';
 import { validateSession } from './../controllers/session.js';
 import { postsIndex, postsNew, postsCreate, tagsSearch, tagsAll } from './../controllers/posts.js';
 import { podcastsIndex, podcastsNew, podcastsCreate, podcastsEdit, podcastsUpdate } from './../controllers/podcasts.js';
-import { recordingsIndex, recordingsCreateSeason, recordingsCreateFile } from './../controllers/recordings.js';
+import { recordingsIndex, recordingsCreateSeason, recordingsCreateFile, recordingsTranscript } from './../controllers/recordings.js';
 import { imagesIndex, imagesNew, imagesCreateCollection, imagesCreateImage, imagesProcess, imagesCollectionDestroy, imagesImageDestroy } from './../controllers/images.js';
 
 /**
@@ -52,6 +52,7 @@ router.post('/podcasts/:id/update', validateSession, podcastsUpdate);
 router.get('/recordings', validateSession, recordingsIndex);
 router.post('/recordings/season', validateSession, recordingsCreateSeason);
 router.post('/recordings/create', validateSession, recordingsCreateFile);
+router.post('/recordings/transcript', validateSession, recordingsTranscript);
 
 // Images
 router.get('/images', validateSession, imagesIndex);

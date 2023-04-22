@@ -90,14 +90,16 @@ let setupUploader = () => {
       containerCard.querySelector('i[class~="fa-2x"]').classList.add('fa-angle-down');
   });
   // Get form submit button
-  let button = document.querySelector('div[data-behavior="create-collection-modal"] button[data-behavior~="submit"]');
+  let button = document.querySelectorAll('div[class~="modal"] button[data-behavior~="submit"]');
   // Add event listener
-  button.addEventListener('click', event => {
-      let target = event.target;
-      // Get form
-      let form = target.parentElement.parentElement.querySelector('form');
-      // Submit form
-      form.submit();
+  button.forEach((element) => {
+      element.addEventListener('click', event => {
+        let target = event.target;
+        // Get form
+        let form = target.parentElement.parentElement.querySelector('form');
+        // Submit form
+        form.submit();
+    });
   });
 };
 
@@ -132,6 +134,99 @@ let getAudioDuration = async (file, callback) => {
   reader.readAsArrayBuffer(file);
 }
 
+let transcribe = async (recordingURL) => {
+  // Get audio blob
+  let audioBlob = await downloadFileFromS3(recordingURL);
+
+  try {
+    const formData = new FormData();
+    formData.append('mp3', audioBlob);
+
+    try {
+      const response = await fetch('http://192.168.1.220/speech-to-text?model=medium.en&lang=en', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+
+      const transcriptionTextArea = document.getElementById('transcriptTextArea');
+      const transcriptionInput = document.getElementById('transcriptId');
+      const transcriptionSubmit = document.getElementById('transcriptSubmit');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      transcriptionInput.value = recordingURL.split('/')[5].split('-')[0];
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const textChunk = decoder.decode(value);
+        transcriptionTextArea.value += textChunk;
+        console.log(textChunk);
+      }
+
+      transcriptionSubmit.disabled = false;
+    } catch (error) {
+      console.error('Error:', error.message);
+    }
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+}
+
+const downloadFileFromS3 = async (recordingURL) => {
+  try {
+    // Fetch the file from the S3 URL
+    const response = await fetch(recordingURL);
+
+    // Check for a successful response
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+
+    // Get the file content as a Blob
+    const fileBlob = await response.blob();
+
+    return fileBlob;
+  } catch (error) {
+    console.error('Error downloading the file:', error);
+  }
+
+  return null;
+};
+
 function recordingsSetup() {
   setupUploader();
+
+  // Get actionables
+  let transcribeItems = document.querySelectorAll('[data-behavior~="transcribe"]');
+
+  // Add event listener
+  transcribeItems.forEach(item => {
+    item.addEventListener('click', event => {
+      let target = event.target;
+      // Get recording id
+      let recordingURL = target.dataset.url;
+
+      transcribe(recordingURL);
+    });
+  });
+
+  // Get actionables
+  let readItems = document.querySelectorAll('[data-behavior~="read"]');
+
+  // Add event listener
+  readItems.forEach(item => {
+    item.addEventListener('click', event => {
+      let target = event.target;
+
+      fetch(target.dataset.url)
+        .then( r => r.text() )
+        .then( t => document.getElementById('readTextArea').value = t );
+    });
+  });
 }

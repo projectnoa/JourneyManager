@@ -39,6 +39,7 @@ app.use(morgan('combined', { stream: winston.stream }));
 app.set("views", join(getDirName(import.meta.url), "views"));
 app.set("view engine", "pug");
 app.use(_static(join(getDirName(import.meta.url), "public")));
+app.use('/public/transcripts', _static(join(getDirName(import.meta.url), '/public/transcripts')));
 
 app.use('/', router);
 app.use(errorHandler);
@@ -63,6 +64,13 @@ function createCookieExpirationDate() {
 
 let cspDefault = [
   "https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.27.3/ui/icons.svg"
+];
+
+let cspConnect = [
+  "https://cdnjs.cloudflare.com/ajax/libs/Trumbowyg/2.27.3/ui/icons.svg",
+  "https://s3-us-west-2.amazonaws.com/",
+  "https://s3.us-west-2.amazonaws.com/",
+  "http://192.168.1.220/"
 ];
 
 let cspJScripts = [
@@ -110,7 +118,7 @@ let cspFonts = [
 
 function setSecurityHeaders(req, res, next) {
   res.setHeader('Content-Security-Policy-Report-Only', 
-    `default-src 'self' ${cspDefault.join(" ")}; script-src 'self' ${cspJScripts.join(" ")}; style-src 'self' 'unsafe-inline' ${cspStyles.join(" ")}; font-src 'self' ${cspFonts.join(" ")}; img-src 'self' data: https:; frame-src 'self'`);
+    `default-src 'self' ${cspDefault.join(" ")}; connect-src 'self' ${cspConnect.join(" ")}; script-src 'self' ${cspJScripts.join(" ")}; style-src 'self' 'unsafe-inline' ${cspStyles.join(" ")}; font-src 'self' ${cspFonts.join(" ")}; img-src 'self' data: https:; frame-src 'self'`);
   res.setHeader('Strict-Transport-Security', 
     'max-age=31536000; includeSubDomains');
   next();

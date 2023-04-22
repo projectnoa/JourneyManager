@@ -26,6 +26,31 @@ block layout-content
           button.btn.btn-primary(data-dismiss='modal', data-behavior='submit') Yes
           button.btn.btn-secondary(data-dismiss='modal') Cancel
 
+  //- Transcribe modal 
+  div.modal.fade(id='transcribeModal', data-behavior='transcribe-modal', tabIndex='-1', role='dialog', aria-labelledby='transcribeTitle', aria-hidden=true)
+    div.modal-dialog.modal-xl.modal-dialog-centered(role='document')
+      div.modal-content
+        div.modal-header
+          div.modal-title=`Episode Transcript`
+        div.modal-body
+          form(action="/recordings/transcript", method="post")
+            textarea.transcriptTextArea.w-100(style="height: 75vh;", name="text", id="transcriptTextArea", placeholder="Transcript will appear here...")
+            input(type="hidden", id="transcriptId", name="id")
+        div.modal-footer
+          button.btn.btn-primary(data-dismiss='modal', data-behavior='submit', disabled=true, id="transcriptSubmit") Save
+          button.btn.btn-secondary(data-dismiss='modal') Close
+  
+  //- Read modal 
+  div.modal.fade(id='readModal', data-behavior='read-modal', tabIndex='-1', role='dialog', aria-labelledby='readTitle', aria-hidden=true)
+    div.modal-dialog.modal-xl.modal-dialog-centered(role='document')
+      div.modal-content
+        div.modal-header
+          div.modal-title=`Episode Transcript`
+        div.modal-body
+          textarea.transcriptTextArea.w-100(style="height: 75vh;", name="text", id="readTextArea")
+        div.modal-footer
+          button.btn.btn-secondary(data-dismiss='modal') Close
+
   h1.mt-5.text-white.text-center Recordings
 
   div.row.no-gutters
@@ -68,8 +93,7 @@ block layout-content
                         th(scope="col") Duration
                         th(scope="col") URL
                         th(scope="col") Uploaded
-                        th(scope="col") Published
-                        th(scope="col") Action
+                        th(scope="col", colspan="3") Published On
                     tbody 
                       each file in item.files
                         tr
@@ -79,9 +103,15 @@ block layout-content
                           td !{new Date(file.duration * 1000).toISOString().substr(11, 8)}
                           td !{file.url.substring(file.url.lastIndexOf('/'))}
                           td !{file.date}
-                          td !{file.pubdate}
                           - if (file.published)
-                            td Published
+                            td !{file.pubdate}
                           - else
                             td 
-                              a.btn.btn-sm.btn-primary(href=`/podcasts/new?recording=${file.title}&length=${file.length}&duration=${file.duration}&season=${item.season}&episode=${file.episode}&location=${file.url}`) Publish
+                              a.btn.btn-sm.btn-danger(href=`/podcasts/new?recording=${file.title}&length=${file.length}&duration=${file.duration}&season=${item.season}&episode=${file.episode}&location=${file.url}`) Publish
+                          - if (file.transcriptPath)
+                            td
+                              button.btn.btn-sm.btn-primary(type='button', data-behavior='read', data-url=`${file.transcriptPath}`, data-toggle="modal" data-target="#readModal") View
+                          - else
+                            td 
+                              button.btn.btn-sm.btn-secondary(type='button', data-behavior='transcribe', data-url=`${file.url}`, data-toggle="modal" data-target="#transcribeModal") Transcribe
+                          
