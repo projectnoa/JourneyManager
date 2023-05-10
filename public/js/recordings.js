@@ -143,7 +143,7 @@ let transcribe = async (recordingURL) => {
     formData.append('mp3', audioBlob);
 
     try {
-      const response = await fetch('http://192.168.1.220/speech-to-text?model=medium.en&lang=en', {
+      const response = await fetch('http://192.168.1.220/speech-to-text?model=small.en&lang=en', {
         method: 'POST',
         body: formData,
       });
@@ -154,9 +154,10 @@ let transcribe = async (recordingURL) => {
 
       const transcriptionTextArea = document.getElementById('transcriptTextArea');
       const transcriptionInput = document.getElementById('transcriptId');
-      const transcriptionSubmit = document.getElementById('transcriptSubmit');
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+
+      transcriptionTextArea.value = '';
 
       transcriptionInput.value = recordingURL.split('/')[5].split('-')[0];
 
@@ -169,7 +170,13 @@ let transcribe = async (recordingURL) => {
         console.log(textChunk);
       }
 
-      transcriptionSubmit.disabled = false;
+      await fetch('/recordings/transcript', {
+        method: 'PUT',
+        body: {
+          id: transcriptionInput.value,
+          text: transcriptionTextArea.value,
+        },
+      });
     } catch (error) {
       console.error('Error:', error.message);
     }
@@ -209,10 +216,9 @@ function recordingsSetup() {
   transcribeItems.forEach(item => {
     item.addEventListener('click', event => {
       let target = event.target;
-      // Get recording id
-      let recordingURL = target.dataset.url;
 
-      transcribe(recordingURL);
+      const transcriptionUrlInput = document.getElementById('transcriptUrl');
+      transcriptionUrlInput.value = target.dataset.url;
     });
   });
 
@@ -224,9 +230,24 @@ function recordingsSetup() {
     item.addEventListener('click', event => {
       let target = event.target;
 
-      fetch(target.dataset.url)
+      fetch(target.dataset.path)
         .then( r => r.text() )
-        .then( t => document.getElementById('readTextArea').value = t );
+        .then( t => document.getElementById('transcriptTextArea').value = t );
+
+      const transcriptionInput = document.getElementById('transcriptId');
+      transcriptionInput.value = target.dataset.url.split('/')[5].split('-')[0];
+      const transcriptionUrlInput = document.getElementById('transcriptUrl');
+      transcriptionUrlInput.value = target.dataset.url;
     });
+  });
+
+  // Get actionables
+  let reprocessButton = document.querySelector('[data-behavior~="process"]');
+
+  // Add event listener
+  reprocessButton.addEventListener('click', event => {
+    const transcriptionUrlInput = document.getElementById('transcriptUrl');
+
+    transcribe(transcriptionUrlInput.value);
   });
 }

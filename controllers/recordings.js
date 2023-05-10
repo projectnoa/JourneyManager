@@ -203,23 +203,9 @@ export async function recordingsCreateFile(req, res) {
     }
 }
 
-export async function recordingsTranscript(req, res) {
+export async function recordingsSaveTranscript(req, res) {
     try {
-        // Get transcript file
-        info(' -- Getting transcript file.');
-        let transcriptIndex = await getTranscriptIndex();
-        // If no items then initialize
-        if (transcriptIndex.transcripts == undefined) {
-            transcriptIndex = { transcripts: [] };
-        }
-        const transcriptPath = filePath.replace('index.json', `${req.body.id}.txt`);
-        // Append item
-        info(' -- Appending item.');
-        transcriptIndex.transcripts.push({ id: req.body.id, path: transcriptPath, date: new Date().toISOString().split('T')[0] });
-        // Update transcript file
-        writeFileSync(filePath, JSON.stringify(transcriptIndex), 'utf-8');
-        writeFileSync(transcriptPath, req.body.text, 'utf-8');
-
+        await saveTranscript(req.body.id, req.body.text);
         // Set notice
         setNotice(res, 'Transcript saved!');
         // Respond
@@ -233,6 +219,49 @@ export async function recordingsTranscript(req, res) {
         // Return error
         res.redirect('back', 500, { title: 'Transcript save', authorized: true });
     }
+}
+
+export async function recordingsSaveTranscriptAsync(req, res) {
+    try {
+        await updateTranscript(req.body.id, req.body.text);
+        // Respond
+        info(' -- Success.');
+        res.status(200).send();
+    } catch (err) {
+        // Log error message
+        error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+        // Respond
+        info(' -- Error.');
+        res.status(500).send();
+    }
+}
+
+let saveTranscript = async (id, text) => {
+    // Get transcript file
+    info(' -- Getting transcript file.');
+    let transcriptIndex = await getTranscriptIndex();
+    // If no items then initialize
+    if (transcriptIndex.transcripts == undefined) {
+        transcriptIndex = { transcripts: [] };
+    }
+
+    const transcriptPath = filePath.replace('index.json', `${id}.txt`);
+
+    // Find the transcript with the specified id or create a new one
+    let transcript = transcriptIndex.transcripts.find(t => t.id === id);
+
+    if (transcript) {
+        // Update date if transcript exists
+        transcript.date = new Date().toISOString().split('T')[0];
+    } else {
+        // Append item if transcript doesn't exist
+        info(' -- Appending item.');
+        transcriptIndex.transcripts.push({ id: id, path: transcriptPath, date: new Date().toISOString().split('T')[0] });
+    }
+
+    // Update transcript file
+    writeFileSync(filePath, JSON.stringify(transcriptIndex), 'utf-8');
+    writeFileSync(transcriptPath, text, 'utf-8');
 }
  
 let parseRecordings = (result, published, transcripts) => {

@@ -36,19 +36,10 @@ block layout-content
           form(action="/recordings/transcript", method="post")
             textarea.transcriptTextArea.w-100(style="height: 75vh;", name="text", id="transcriptTextArea", placeholder="Transcript will appear here...")
             input(type="hidden", id="transcriptId", name="id")
+            input(type="hidden", id="transcriptUrl", name="url")
         div.modal-footer
-          button.btn.btn-primary(data-dismiss='modal', data-behavior='submit', disabled=true, id="transcriptSubmit") Save
-          button.btn.btn-secondary(data-dismiss='modal') Close
-  
-  //- Read modal 
-  div.modal.fade(id='readModal', data-behavior='read-modal', tabIndex='-1', role='dialog', aria-labelledby='readTitle', aria-hidden=true)
-    div.modal-dialog.modal-xl.modal-dialog-centered(role='document')
-      div.modal-content
-        div.modal-header
-          div.modal-title=`Episode Transcript`
-        div.modal-body
-          textarea.transcriptTextArea.w-100(style="height: 75vh;", name="text", id="readTextArea")
-        div.modal-footer
+          button.btn.btn-primary(data-dismiss='modal', data-behavior='submit', id="transcriptSubmit") Save
+          button.btn.btn-secondary(data-behavior='process') Process
           button.btn.btn-secondary(data-dismiss='modal') Close
 
   h1.mt-5.text-white.text-center Recordings
@@ -110,8 +101,8 @@ block layout-content
                               a.btn.btn-sm.btn-danger(href=`/podcasts/new?recording=${file.title}&length=${file.length}&duration=${file.duration}&season=${item.season}&episode=${file.episode}&location=${file.url}`) Publish
                           - if (file.transcriptPath)
                             td
-                              button.btn.btn-sm.btn-primary(type='button', data-behavior='read', data-url=`${file.transcriptPath}`, data-toggle="modal" data-target="#readModal") View
+                              button.btn.btn-sm.btn-primary(type='button', data-behavior='read', data-path=`${file.transcriptPath}`, data-url=`${file.url}`, data-toggle="modal" data-target="#transcribeModal") Text
                           - else
                             td 
-                              button.btn.btn-sm.btn-secondary(type='button', data-behavior='transcribe', data-url=`${file.url}`, data-toggle="modal" data-target="#transcribeModal") Transcribe
+                              button.btn.btn-sm.btn-primary(type='button', data-behavior='transcribe', data-url=`${file.url}`, data-toggle="modal" data-target="#transcribeModal") Text
                           
