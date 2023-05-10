@@ -223,7 +223,7 @@ export async function recordingsSaveTranscript(req, res) {
 
 export async function recordingsSaveTranscriptAsync(req, res) {
     try {
-        await updateTranscript(req.body.id, req.body.text);
+        await saveTranscript(req.body.id, req.body.text);
         // Respond
         info(' -- Success.');
         res.status(200).send();

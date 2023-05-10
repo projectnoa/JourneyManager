@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "start": "JM_WP_ENDPOINT='https://www.ajourneyforwisdom.com' JM_WP_AUTH_ID='JGv7lqrJaZFGLJu9V5boucNSdaGbDweVusNfIY29' node -r dotenv/config ./start.js",
-    "dev": "JM_WP_ENDPOINT='https://www.ajourneyforwisdom.com' JM_WP_AUTH_ID='JGv7lqrJaZFGLJu9V5boucNSdaGbDweVusNfIY29' nodemon --ignore 'resources/*' -r dotenv/config ./start.js"
+    "dev": "JM_WP_ENDPOINT='https://www.ajourneyforwisdom.com' JM_WP_AUTH_ID='JGv7lqrJaZFGLJu9V5boucNSdaGbDweVusNfIY29' nodemon --ignore public/transcripts/ -r dotenv/config ./start.js"
   },
   "keywords": [],
   "author": "",

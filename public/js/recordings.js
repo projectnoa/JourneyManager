@@ -1,4 +1,8 @@
 
+const transcriptionServiceURL = 'http://192.168.1.220';
+const transcriptionServiceModel = 'small.en';
+const transcriptionServiceEndpoint = `${transcriptionServiceURL}/speech-to-text?model=${transcriptionServiceModel}&lang=en`;
+
 let setupDropzone = (target) => {
   // Get dropzone elements
   let dropzoneElement = target.querySelector('[data-behavior~="post-recordings"]');
@@ -143,7 +147,7 @@ let transcribe = async (recordingURL) => {
     formData.append('mp3', audioBlob);
 
     try {
-      const response = await fetch('http://192.168.1.220/speech-to-text?model=small.en&lang=en', {
+      const response = await fetch(transcriptionServiceEndpoint, {
         method: 'POST',
         body: formData,
       });
@@ -158,8 +162,7 @@ let transcribe = async (recordingURL) => {
       const decoder = new TextDecoder();
 
       transcriptionTextArea.value = '';
-
-      transcriptionInput.value = recordingURL.split('/')[5].split('-')[0];
+      transcriptionInput.value = getRecordingID(recordingURL);
 
       while (true) {
         const { value, done } = await reader.read();
@@ -172,10 +175,14 @@ let transcribe = async (recordingURL) => {
 
       await fetch('/recordings/transcript', {
         method: 'PUT',
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        mode: 'same-origin',
+        body: JSON.stringify({
           id: transcriptionInput.value,
           text: transcriptionTextArea.value,
-        },
+        }),
       });
     } catch (error) {
       console.error('Error:', error.message);
@@ -189,65 +196,73 @@ const downloadFileFromS3 = async (recordingURL) => {
   try {
     // Fetch the file from the S3 URL
     const response = await fetch(recordingURL);
-
     // Check for a successful response
     if (!response.ok) {
       throw new Error('Network response was not ok');
     }
-
     // Get the file content as a Blob
     const fileBlob = await response.blob();
-
+    // Return the file as a Blob
     return fileBlob;
   } catch (error) {
     console.error('Error downloading the file:', error);
   }
-
+  // If there was an error, return null
   return null;
 };
 
 function recordingsSetup() {
+  // Setup uploader
   setupUploader();
-
   // Get actionables
   let transcribeItems = document.querySelectorAll('[data-behavior~="transcribe"]');
-
   // Add event listener
   transcribeItems.forEach(item => {
     item.addEventListener('click', event => {
       let target = event.target;
-
-      const transcriptionUrlInput = document.getElementById('transcriptUrl');
-      transcriptionUrlInput.value = target.dataset.url;
+      // Set modal properties
+      setupTranscriptionModal(target.dataset.url);
     });
   });
-
   // Get actionables
   let readItems = document.querySelectorAll('[data-behavior~="read"]');
-
   // Add event listener
   readItems.forEach(item => {
     item.addEventListener('click', event => {
       let target = event.target;
-
+      // Get transcript and set text area
       fetch(target.dataset.path)
         .then( r => r.text() )
         .then( t => document.getElementById('transcriptTextArea').value = t );
-
-      const transcriptionInput = document.getElementById('transcriptId');
-      transcriptionInput.value = target.dataset.url.split('/')[5].split('-')[0];
-      const transcriptionUrlInput = document.getElementById('transcriptUrl');
-      transcriptionUrlInput.value = target.dataset.url;
+      // Set modal properties
+      setupTranscriptionModal(target.dataset.url);
     });
   });
-
   // Get actionables
-  let reprocessButton = document.querySelector('[data-behavior~="process"]');
-
+  let processButton = document.querySelector('[data-behavior~="process"]');
   // Add event listener
-  reprocessButton.addEventListener('click', event => {
+  processButton.addEventListener('click', event => {
     const transcriptionUrlInput = document.getElementById('transcriptUrl');
-
+    // Initialize transcription
     transcribe(transcriptionUrlInput.value);
   });
+}
+
+function setupTranscriptionModal(recordingURL) {
+  // Set modal properties
+  const transcriptionInput = document.getElementById('transcriptId');
+  transcriptionInput.value = getRecordingID(recordingURL);
+  // Set modal properties
+  const transcriptionUrlInput = document.getElementById('transcriptUrl');
+  transcriptionUrlInput.value = recordingURL;
+}
+
+/**
+ * Get recording ID from URL
+ * @param {string} recordingURL Recording URL
+ * @returns recording ID string
+ */
+function getRecordingID(recordingURL) {
+  // Get recording ID
+  return recordingURL.split('/')[5].split('-')[0];
 }
