@@ -222,6 +222,8 @@ function recordingsSetup() {
       let target = event.target;
       // Set modal properties
       setupTranscriptionModal(target.dataset.url);
+      // Clear text area
+      document.getElementById('transcriptTextArea').value = '';
     });
   });
   // Get actionables
