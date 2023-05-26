@@ -1,4 +1,8 @@
 
+function paramNameForSend() {
+    return "multi-files";
+ }
+
 function imagesSetup() {
     // Set show collapsible behavior
     $('.collapse').on('show.bs.collapse', (event) => {
@@ -17,11 +21,12 @@ function imagesSetup() {
             // Initialize config
             let config = { 
                 url: `/images/createImage`,
-                paramName: "file",
+                paramName: paramNameForSend,
                 params: { collection_id: dropzoneElement.dataset.id, source: dropzoneElement.dataset.source },
-                maxFilesize: 1, 
-                uploadMultiple: false,
-                parallelUploads: 1,
+                maxFilesize: 2,
+                maxFiles: 10,
+                uploadMultiple: true,
+                parallelUploads: 10,
                 createImageThumbnails: false,
                 acceptedFiles: 'image/*',
                 enctype: "multipart/form-data"

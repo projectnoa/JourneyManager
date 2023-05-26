@@ -69,7 +69,9 @@ block layout-content
                         img.card-img-top(data-src=image.url, alt=image.title)
                         div.card-body
                           div.card-text
-                            small.text-muted= image.url
+                            small.text-muted URL
+                            textarea.copyarea(name="", data-behavior='copy')= image.url
+                            small.text-muted click to copy
                             span.float-right
                               form(action=`/images/${item.id}/image/${image.id}/delete`, method="post", data-id=`imageDelete-${image.id}`)
                                 input(type="hidden", name="collection_id", value=item.id)

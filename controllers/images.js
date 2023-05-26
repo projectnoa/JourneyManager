@@ -16,7 +16,7 @@ import sizeOf from 'image-size';
 import Collection from './../models/collection.js';
 
 import fetcher from './../helpers/fetcher.js';
-import requestProcessor from './../helpers/imageUpload.js';
+import requestProcessor from './../helpers/imagesUpload.js';
 
 import { info, error } from './../helpers/winston.js';
 import { setNotice, getFileLocation } from './../helpers/helper.js';
@@ -152,9 +152,9 @@ export async function imagesCreateImage(req, res) {
             setNotice(res, `An error occured: ${req.fileValidationError}`);
             // Return error
             return res.redirect('back', 500, { title: 'Images', authorized: true });
-        } else if (!req.file) {
+        } else if (!req.files) {
             // Set notice
-            setNotice(res, 'An error occured: No file provided');
+            setNotice(res, 'An error occured: No files provided');
             // Return error
             return res.redirect('back', 500, { title: 'Images', authorized: true });
         }
@@ -168,76 +168,30 @@ export async function imagesCreateImage(req, res) {
 
         if (!constants.ASSET_SOURCE_KEYS.includes(source)) throw new Error('Missing source!')
 
-        // Compressing image
-        info(' -- Compressing images.');
-        let jimpImg = await jimp.read(req.file.path);
-        jimpImg.quality(60);
-        await jimpImg.writeAsync(req.file.path);
-
-        const compressed_path = req.file.path;
-        const compressed_name = basename(req.file.path);
-
-        // Upload file
-        info(' -- Uploading image file.');
-        let response = await uploadImage({ filename: compressed_name, path: compressed_path }, source);
-
-        if (response.$metadata.httpStatusCode !== 200) {
-            throw new Error('Error uploading image.');
-        }
-
-        // Getting image dimentions
-        info(' -- Getting image dimentions.');
-        let dimensions = sizeOf(req.file.path);
-
-        // Delete file
-        info(' -- Deleting image files.');
-        deleteTemp(req.file, unlink);
-
-        fileDeleted = true;
-
         // Get live feed
         info(' -- Getting live feed.');
         let result = await fetcher(constants.ASSET_SOURCES[source]);
+        
+        // Process images
+        result = await processImages(req.files, result, collection_id, source, unlink);
 
-        const location = getFileLocation(constants.ASSETS_S3_BUCKET, `${source}/${compressed_name}`);
-
-        // Append item
-        info(' -- Appending item.');
-        let updatedResult = updateCollection(result, collection_id, (element) => {
-            if (element.image == undefined) {
-                element.image = [];
-            } else if (!Array.isArray(element.image)) {
-                element.image = [element.image];
-            }
-
-            element.image.push({ 
-                $: { 
-                    id: new Date().getTime(), 
-                    title: compressed_name, 
-                    url: location, 
-                    width: dimensions.width, 
-                    height: dimensions.height 
-                } 
-            });
-
-            return element;
-        });
+        fileDeleted = true;
 
         // Publish feed update
         info(' -- Publishing feed updates.');
-        response = await submitS3File({
+        let response = await submitS3File({
             Bucket: constants.ASSETS_S3_BUCKET,
             Key: `${source}/${constants.SETTINGS_XML}`,
-            Body: jsonToXML(updatedResult),
+            Body: jsonToXML(result),
             ACL: 'public-read'
         });
 
         if (response.$metadata.httpStatusCode !== 200) {
-            throw new Error('Error creating new image.');
+            throw new Error('Error creating new images.');
         }
 
         // Set notice
-        setNotice(res, 'Image saved!');
+        setNotice(res, 'Images saved!');
 
         // Respond
         info(' -- Success.');
@@ -246,7 +200,14 @@ export async function imagesCreateImage(req, res) {
         // Log error message
         error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
         // Delete file
-        if (!fileDeleted) deleteTemp(req.file, unlink);
+        if (!fileDeleted) {
+            req.files.forEach(file => {
+                deleteTemp(file, unlink)
+                    .catch(err => {
+                        error(`Error deleting file: ${err.message}`);
+                    });
+            });
+        }
         // Set notice
         setNotice(res, `An error occured: ${err.message}`);
         // Return error
@@ -430,6 +391,65 @@ let parseImages = (result) => {
 
 let removeImage = async (key, source) => {
     return await deleteS3File(constants.ASSETS_S3_BUCKET, `${source}/${key}`);
+}
+
+let processImages = async (files, result, collection_id, source, unlink) => {
+
+    for (const file of files) {
+        // Compressing image
+        info(' -- Compressing images.');
+        let jimpImg = await jimp.read(file.path);
+        jimpImg.quality(60);
+        await jimpImg.writeAsync(file.path);
+
+        const compressed_path = file.path;
+        const compressed_name = basename(file.path);
+
+        // Upload file
+        info(' -- Uploading image file.');
+        let response = await uploadImage({ filename: compressed_name, path: compressed_path }, source);
+
+        if (response.$metadata.httpStatusCode !== 200) {
+            throw new Error('Error uploading image.');
+        }
+
+        // Getting image dimentions
+        info(' -- Getting image dimentions.');
+        let dimensions = sizeOf(file.path);
+
+        // Delete file
+        info(' -- Deleting image files.');
+        await deleteTemp(file, unlink)
+            .catch(err => {
+                throw err;
+            });
+
+        const location = getFileLocation(constants.ASSETS_S3_BUCKET, `${source}/${compressed_name}`);
+
+        // Append item
+        info(' -- Appending item.');
+        result = updateCollection(result, collection_id, (element) => {
+            if (element.image == undefined) {
+                element.image = [];
+            } else if (!Array.isArray(element.image)) {
+                element.image = [element.image];
+            }
+
+            element.image.push({ 
+                $: { 
+                    id: new Date().getTime(), 
+                    title: compressed_name, 
+                    url: location, 
+                    width: dimensions.width, 
+                    height: dimensions.height 
+                } 
+            });
+
+            return element;
+        });
+    }
+
+    return result;
 }
 
 let updateCollection = (result, id, updateCallback) => {

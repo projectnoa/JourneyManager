@@ -23,6 +23,6 @@ let storage = diskStorage({
   }
 });
 
-let uploadFiles = multer({ storage: storage }).array("multi-files", 4);
+let uploadFiles = multer({ storage: storage }).array("multi-files", 10);
 let uploadImagesMiddleware = promisify(uploadFiles);
 export default uploadImagesMiddleware;

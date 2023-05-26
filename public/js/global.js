@@ -18,6 +18,8 @@ window.addEventListener("load", () => {
     setConfirmBehavior();
     // Set delete behaviors 
     setDeleteBehavior();
+    // Set copy to clipboard behaviors
+    setCopyToClipboard();
 });
 
 let refreshPage = () => {
@@ -33,4 +35,34 @@ function addMinutes(date, minutes) {
 
 function errorSetup() {
     // NOTHING
+}
+
+function setCopyToClipboard() {
+    // Get copy button
+    let copyButton = document.querySelectorAll('[data-behavior~="copy"]');
+    // Add event listener
+    copyButton.forEach(element => {
+        element.addEventListener('click', event => {
+            let target = event.target;
+            target.focus();
+            target.select();
+
+            try {
+                let successful = document.execCommand('copy');
+                let msg = successful ? 'successful' : 'unsuccessful';
+                console.log('Copying text command was ' + msg);
+              } catch (err) {
+                console.log('Oops, unable to copy');
+              }
+        })
+    });
+}
+
+function copyTextToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(function() {
+            console.log('Async: Copying to clipboard was successful!');
+        }, function(err) {
+            console.error('Async: Could not copy text: ', err);
+        });
 }
