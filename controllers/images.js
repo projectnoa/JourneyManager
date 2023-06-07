@@ -16,7 +16,8 @@ import sizeOf from 'image-size';
 import Collection from './../models/collection.js';
 
 import fetcher from './../helpers/fetcher.js';
-import requestProcessor from './../helpers/imagesUpload.js';
+import multiImageUpload from './../helpers/imagesUpload.js';
+import singleImageUpload from './../helpers/imagesUpload.js';
 
 import { info, error } from './../helpers/winston.js';
 import { setNotice, getFileLocation } from './../helpers/helper.js';
@@ -143,7 +144,7 @@ export async function imagesCreateImage(req, res) {
     try {
         // Process request
         info(' -- Processing request.');
-        await requestProcessor(req, res);
+        await multiImageUpload(req, res);
 
         // Validate file upload
         info(' -- Validating request.');
@@ -223,7 +224,7 @@ export async function imagesProcess(req, res) {
     try {
         // Process request
         info(' -- Processing request.');
-        await requestProcessor(req, res);
+        await singleImageUpload(req, res);
 
         // Compressing image
         info(' -- Compressing images.');
