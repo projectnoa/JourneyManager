@@ -17,7 +17,7 @@ import Collection from './../models/collection.js';
 
 import fetcher from './../helpers/fetcher.js';
 import multiImageUpload from './../helpers/imagesUpload.js';
-import singleImageUpload from './../helpers/imagesUpload.js';
+import singleImageUpload from './../helpers/imageUpload.js';
 
 import { info, error } from './../helpers/winston.js';
 import { setNotice, getFileLocation } from './../helpers/helper.js';
